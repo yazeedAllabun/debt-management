@@ -5,7 +5,7 @@ import { ClientsToolbar } from './ClientsToolbar'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 export function ClientsPage() {
-  const { clients, loading, error } = useClients()
+  const { clients, loading, error, deleteClient } = useClients()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -39,7 +39,7 @@ export function ClientsPage() {
       />
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <ClientsTable clients={filtered} />
+        <ClientsTable clients={filtered} onDelete={deleteClient} />
       </div>
     </div>
   )

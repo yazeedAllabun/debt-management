@@ -1,7 +1,8 @@
+import { Trash2 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { formatCurrency, formatDate, calcProfit } from '../../utils/formatters'
 
-export function ClientsTable({ clients }) {
+export function ClientsTable({ clients, onDelete }) {
   if (clients.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400 dark:text-gray-500">
@@ -15,7 +16,7 @@ export function ClientsTable({ clients }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-            {['الاسم', 'رقم الهوية', 'رقم الجوال', 'البنك', 'مبلغ الدين', 'المبلغ المدفوع', 'الربح', 'الحالة', 'تاريخ الإضافة'].map(h => (
+            {['الاسم', 'رقم الهوية', 'رقم الجوال', 'البنك', 'مبلغ الدين', 'المبلغ المدفوع', 'الربح', 'الحالة', 'تاريخ الإضافة', ''].map(h => (
               <th key={h} className="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {h}
               </th>
@@ -36,6 +37,19 @@ export function ClientsTable({ clients }) {
               </td>
               <td className="px-4 py-3"><Badge status={c.status} /></td>
               <td className="px-4 py-3 text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatDate(c.created_at)}</td>
+              <td className="px-4 py-3">
+                <button
+                  onClick={() => {
+                    if (window.confirm(`هل تريد حذف العميل "${c.name}"؟`)) {
+                      onDelete(c.id)
+                    }
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="حذف العميل"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
