@@ -6,8 +6,8 @@ import { calcProfit, formatCurrency } from '../../utils/formatters'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 
 const BANKS = [
-  'الراجحي', 'الأهلي', 'سامبا', 'الرياض', 'البلاد', 'الإنماء',
-  'العربي الوطني', 'السعودي الفرنسي', 'البريد', 'اليمامة', 'الجزيرة', 'أخرى',
+  'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
+  'العربي الوطني', 'السعودي الفرنسي', 'الجزيرة', 'الإمارات دبي الوطني', 'أخرى',
 ]
 
 function Field({ label, error, children }) {
