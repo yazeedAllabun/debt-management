@@ -16,7 +16,7 @@ const navItems = [
 ]
 
 export function Sidebar() {
-  const calculatorUrl = import.meta.env.VITE_CALCULATOR_URL || '#'
+  const calculatorUrl = import.meta.env.VITE_CALCULATOR_URL || 'https://yazeedallabun.github.io/calculator'
 
   return (
     <aside className="no-print fixed top-16 right-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col z-20 shadow-sm">
