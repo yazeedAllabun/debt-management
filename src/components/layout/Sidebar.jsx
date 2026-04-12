@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -15,17 +15,23 @@ const navItems = [
   { to: '/reports',    label: 'التقارير',    icon: FileBarChart2 },
 ]
 
-export function Sidebar() {
+export function Sidebar({ open, onClose }) {
   const calculatorUrl = import.meta.env.VITE_CALCULATOR_URL || 'https://yazeedallabun.github.io/calculator'
 
   return (
-    <aside className="no-print fixed top-16 right-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col z-20 shadow-sm">
+    <aside className={`
+      no-print fixed top-16 right-0 h-[calc(100vh-4rem)] w-64
+      bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700
+      flex flex-col z-20 shadow-sm transition-transform duration-300
+      ${open ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+    `}>
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                 isActive
@@ -39,19 +45,17 @@ export function Sidebar() {
           </NavLink>
         ))}
 
-        {/* المحتسب — رابط خارجي واحد */}
+        {/* المحتسب */}
         <a
           href={calculatorUrl}
-          target={calculatorUrl !== '#' ? '_blank' : undefined}
+          target="_blank"
           rel="noopener noreferrer"
+          onClick={onClose}
           className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
         >
           <Calculator size={19} />
           <span className="flex-1">المحتسب</span>
-          {calculatorUrl !== '#'
-            ? <ExternalLink size={13} className="text-gray-400" />
-            : <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">قريباً</span>
-          }
+          <ExternalLink size={13} className="text-gray-400" />
         </a>
       </nav>
 
