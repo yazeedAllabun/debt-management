@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { calcProfit, formatCurrency } from '../../utils/formatters'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
 
 const BANKS = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
@@ -57,23 +57,38 @@ export function AddClientPage() {
     )
   }
 
-  const onSubmit = async (data) => {
+  const saveClient = async (data) => {
+    await addClient({
+      name:             data.name.trim(),
+      phone:            data.phone?.trim() || null,
+      bank_names:       selectedBanks,
+      debt_amount:      parseFloat(data.debt_amount),
+      commission_pct:   parseFloat(data.commission_pct),
+      payment_status:   data.payment_status,
+      financing_status: data.financing_status,
+      notes:            data.notes?.trim() || null,
+    })
+    reset()
+    setSelectedBanks([])
+  }
+
+  const onSave = async (data) => {
     setSubmitStatus(null)
     try {
-      await addClient({
-        name:              data.name.trim(),
-        phone:             data.phone?.trim() || null,
-        bank_names:        selectedBanks,
-        debt_amount:       parseFloat(data.debt_amount),
-        commission_pct:    parseFloat(data.commission_pct),
-        payment_status:    data.payment_status,
-        financing_status:  data.financing_status,
-        notes:             data.notes?.trim() || null,
-      })
+      await saveClient(data)
       setSubmitStatus('success')
-      reset()
-      setSelectedBanks([])
       setTimeout(() => navigate('/clients'), 1500)
+    } catch (err) {
+      setErrorMsg(err.message)
+      setSubmitStatus('error')
+    }
+  }
+
+  const onSaveAndCalculate = async (data) => {
+    setSubmitStatus(null)
+    try {
+      await saveClient(data)
+      navigate('/calculator')
     } catch (err) {
       setErrorMsg(err.message)
       setSubmitStatus('error')
@@ -100,7 +115,7 @@ export function AddClientPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-5">
+      <form className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-5">
 
         {/* البيانات الشخصية */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -233,20 +248,30 @@ export function AddClientPage() {
           />
         </Field>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit(onSave)}
             disabled={isSubmitting}
             className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors"
           >
-            {isSubmitting ? 'جاري الحفظ...' : 'حفظ العميل'}
+            {isSubmitting ? 'جاري الحفظ...' : 'حفظ'}
           </button>
           <button
             type="button"
-            onClick={() => { reset(); setSelectedBanks([]) }}
+            onClick={handleSubmit(onSaveAndCalculate)}
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <Calculator size={16} />
+            حفظ واحتساب
+          </button>
+          <button
+            type="button"
+            onClick={() => { reset(); setSelectedBanks([]); navigate(-1) }}
             className="px-6 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
           >
-            مسح
+            إلغاء
           </button>
         </div>
       </form>
