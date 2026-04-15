@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
+import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
 
 /* ─── PIN helpers ─── */
@@ -84,6 +85,7 @@ function EmployeeForm({ onSave, onCancel }) {
 /* ─── Main Component ─── */
 export function OwnerPage() {
   const navigate    = useNavigate()
+  const { ownerLogin, ownerLogout } = useOwnerSession()
   const storedPin   = getPin()
   const isFirstTime = !storedPin
 
@@ -134,7 +136,7 @@ export function OwnerPage() {
           </div>
           <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" onKeyDown={e => { if(e.key==='Enter'){ if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); setStep('dashboard') }}} />
         </div>
-        <button onClick={() => { if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); setStep('dashboard') }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">تعيين كلمة المرور</button>
+        <button onClick={() => { if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">تعيين كلمة المرور</button>
       </div>
     </div>
   )
@@ -152,10 +154,10 @@ export function OwnerPage() {
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="relative text-right">
-          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" onKeyDown={e => { if(e.key==='Enter'){ if(pin===getPin()){setError('');setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}} />
+          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" onKeyDown={e => { if(e.key==='Enter'){ if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}} />
           <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
         </div>
-        <button onClick={() => { if(pin===getPin()){setError('');setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">دخول</button>
+        <button onClick={() => { if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">دخول</button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">رجوع للرئيسية</button>
       </div>
     </div>
@@ -201,7 +203,7 @@ export function OwnerPage() {
           <button onClick={() => { setStep('change'); setPin(''); setError('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
             <KeyRound size={14} /> تغيير كلمة المرور
           </button>
-          <button onClick={() => { setStep('login'); setPin('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
+          <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
             <Lock size={14} /> قفل
           </button>
         </div>

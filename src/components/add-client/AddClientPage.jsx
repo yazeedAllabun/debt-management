@@ -31,6 +31,7 @@ export function AddClientPage() {
   const [submitStatus, setSubmitStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [selectedBanks, setSelectedBanks] = useState([])
+  const employees = (() => { try { return JSON.parse(localStorage.getItem('employees') || '[]') } catch { return [] } })()
 
   const {
     register,
@@ -62,6 +63,7 @@ export function AddClientPage() {
       name:             data.name.trim(),
       phone:            data.phone?.trim() || null,
       bank_names:       selectedBanks,
+      added_by:         data.added_by || null,
       debt_amount:      parseFloat(data.debt_amount),
       commission_pct:   parseFloat(data.commission_pct),
       payment_status:   data.payment_status,
@@ -139,6 +141,18 @@ export function AddClientPage() {
             />
           </Field>
         </div>
+
+        {/* الموظف المسؤول */}
+        {employees.length > 0 && (
+          <Field label="أضيف بواسطة">
+            <select {...register('added_by')} className={inputCls}>
+              <option value="">— اختر الموظف —</option>
+              {employees.map(e => (
+                <option key={e.id} value={e.name}>{e.name} ({e.role})</option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         {/* البنوك — اختيار متعدد */}
         <div>

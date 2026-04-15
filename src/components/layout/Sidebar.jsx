@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useOwnerSession } from '../../context/OwnerSessionContext'
 import {
   LayoutDashboard,
   Users,
@@ -6,6 +7,7 @@ import {
   FileBarChart2,
   Calculator,
   ShieldCheck,
+  UsersRound,
 } from 'lucide-react'
 
 const navItems = [
@@ -17,6 +19,8 @@ const navItems = [
 ]
 
 export function Sidebar({ open, onClose }) {
+  const { isOwner } = useOwnerSession()
+
   return (
     <aside className={`
       no-print fixed top-16 right-0 h-[calc(100vh-4rem)] w-64
@@ -44,6 +48,26 @@ export function Sidebar({ open, onClose }) {
           </NavLink>
         ))}
       </nav>
+
+      {/* صفحة الموظفون — للمالك فقط */}
+      {isOwner && (
+        <div className="px-3 pb-1">
+          <NavLink
+            to="/employees"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+                isActive
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+              }`
+            }
+          >
+            <UsersRound size={19} />
+            <span>الموظفون</span>
+          </NavLink>
+        </div>
+      )}
 
       {/* صفحة المالك — في الأسفل */}
       <div className="p-3 border-t border-gray-100 dark:border-gray-800">
