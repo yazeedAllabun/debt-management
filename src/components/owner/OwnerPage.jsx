@@ -85,11 +85,15 @@ function EmployeeForm({ onSave, onCancel }) {
 /* ─── Main Component ─── */
 export function OwnerPage() {
   const navigate    = useNavigate()
-  const { ownerLogin, ownerLogout } = useOwnerSession()
+  const { isOwner, ownerLogin, ownerLogout } = useOwnerSession()
   const storedPin   = getPin()
   const isFirstTime = !storedPin
 
-  const [step, setStep]         = useState(isFirstTime ? 'setup' : 'login')
+  const [step, setStep]         = useState(() => {
+    if (isFirstTime) return 'setup'
+    if (isOwner) return 'dashboard'
+    return 'login'
+  })
   const [pin, setPin]           = useState('')
   const [confirmPin, setConfirm] = useState('')
   const [newPin, setNewPin]     = useState('')

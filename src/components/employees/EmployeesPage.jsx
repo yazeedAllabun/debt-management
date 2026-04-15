@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { useClients } from '../../hooks/useClients'
 import { formatCurrency, formatNumber, calcProfit } from '../../utils/formatters'
-import { Lock, UsersRound, TrendingUp, UserCheck, Banknote } from 'lucide-react'
+import { Lock, UsersRound, TrendingUp, UserCheck, Banknote, ArrowLeft } from 'lucide-react'
 
 const getEmps = () => {
   try { return JSON.parse(localStorage.getItem('employees') || '[]') } catch { return [] }
@@ -56,11 +56,20 @@ export function EmployeesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">إنتاجية الموظفين</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {employees.length} موظف مسجّل • إجمالي العملاء: {formatNumber(clients.length)}
-        </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/owner')}
+          className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+          title="رجوع لصفحة المالك"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">إنتاجية الموظفين</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {employees.length} موظف مسجّل • إجمالي العملاء: {formatNumber(clients.length)}
+          </p>
+        </div>
       </div>
 
       {employees.length === 0 ? (
