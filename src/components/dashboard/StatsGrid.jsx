@@ -1,4 +1,4 @@
-import { Users, CheckCircle, Clock, TrendingUp, Banknote, CreditCard } from 'lucide-react'
+import { Users, CheckCircle, Clock, TrendingUp, Banknote, CreditCard, CalendarDays } from 'lucide-react'
 import { StatCard } from '../ui/StatCard'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 
@@ -7,9 +7,16 @@ export function StatsGrid({ stats }) {
     {
       title: 'إجمالي العملاء',
       value: formatNumber(stats.totalClients),
-      subtitle: `هذا الشهر: ${formatNumber(stats.thisMonthClients)} عميل`,
+      subtitle: `تم السداد: ${formatNumber(stats.paymentDone)} • معلق: ${formatNumber(stats.paymentPending)}`,
       icon: Users,
       color: 'blue',
+    },
+    {
+      title: 'إنتاجية هذا الشهر',
+      value: formatNumber(stats.thisMonthClients) + ' عميل',
+      subtitle: formatCurrency(stats.thisMonthDebt),
+      icon: CalendarDays,
+      color: 'purple',
     },
     {
       title: 'إجراءات السداد',
@@ -42,7 +49,7 @@ export function StatsGrid({ stats }) {
     {
       title: 'إجمالي الأرباح',
       value: formatCurrency(stats.totalProfit),
-      subtitle: 'صافي الأرباح من العمولات',
+      subtitle: `من ${formatNumber(stats.totalClients)} عميل`,
       icon: TrendingUp,
       color: 'green',
     },
