@@ -1,4 +1,4 @@
-import { Users, CheckCircle, Clock, TrendingUp, Banknote, CalendarDays } from 'lucide-react'
+import { Users, CheckCircle, Clock, TrendingUp, Banknote, CreditCard } from 'lucide-react'
 import { StatCard } from '../ui/StatCard'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 
@@ -7,30 +7,37 @@ export function StatsGrid({ stats }) {
     {
       title: 'إجمالي العملاء',
       value: formatNumber(stats.totalClients),
-      subtitle: `${formatNumber(stats.paidClientsCount)} مكتمل • ${formatNumber(stats.pendingClientsCount)} معلق`,
+      subtitle: `هذا الشهر: ${formatNumber(stats.thisMonthClients)} عميل`,
       icon: Users,
       color: 'blue',
     },
     {
-      title: 'العملاء المسددون',
-      value: formatNumber(stats.paidClientsCount),
-      subtitle: 'إجمالي الحالات المكتملة',
+      title: 'إجراءات السداد',
+      value: formatNumber(stats.paymentDone),
+      subtitle: `معلق: ${formatNumber(stats.paymentPending)}`,
       icon: CheckCircle,
       color: 'green',
     },
     {
+      title: 'إجراءات التمويل',
+      value: formatNumber(stats.financingDone),
+      subtitle: `معلق لدى البنك: ${formatNumber(stats.financingPending)}`,
+      icon: CreditCard,
+      color: 'purple',
+    },
+    {
       title: 'الحالات المعلقة',
-      value: formatNumber(stats.pendingClientsCount),
-      subtitle: 'قيد المعالجة',
+      value: formatNumber(stats.pendingCases),
+      subtitle: 'تحتاج متابعة',
       icon: Clock,
       color: 'yellow',
     },
     {
-      title: 'إجمالي الديون',
-      value: formatCurrency(stats.totalDebt),
-      subtitle: `مدفوع: ${formatCurrency(stats.totalPaid)}`,
+      title: 'إجمالي السداد',
+      value: formatCurrency(stats.totalPaid),
+      subtitle: `من إجمالي ديون: ${formatCurrency(stats.totalDebt)}`,
       icon: Banknote,
-      color: 'purple',
+      color: 'blue',
     },
     {
       title: 'إجمالي الأرباح',
@@ -38,13 +45,6 @@ export function StatsGrid({ stats }) {
       subtitle: 'صافي الأرباح من العمولات',
       icon: TrendingUp,
       color: 'green',
-    },
-    {
-      title: 'إنتاجية هذا الشهر',
-      value: formatNumber(stats.thisMonthClients),
-      subtitle: `${formatCurrency(stats.thisMonthDebt)} إجمالي`,
-      icon: CalendarDays,
-      color: 'blue',
     },
   ]
 

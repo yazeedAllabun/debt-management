@@ -5,6 +5,7 @@ import { DashboardPage } from './components/dashboard/DashboardPage'
 import { ClientsPage } from './components/clients/ClientsPage'
 import { AddClientPage } from './components/add-client/AddClientPage'
 import { ReportsPage } from './components/reports/ReportsPage'
+import { OwnerPage } from './components/owner/OwnerPage'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="clients" element={<ClientsPage />} />
             <Route path="add-client" element={<AddClientPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="owner" element={<OwnerPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

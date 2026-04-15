@@ -11,29 +11,52 @@ export function useDashboardStats(clients) {
     const thisMonthClients = clients.filter(c => {
       try {
         return isWithinInterval(new Date(c.created_at), { start: monthStart, end: monthEnd })
-      } catch {
-        return false
-      }
+      } catch { return false }
     })
 
-    const paidClients = clients.filter(c => c.status === 'paid')
-    const totalDebt = clients.reduce((sum, c) => sum + (parseFloat(c.debt_amount) || 0), 0)
-    const totalPaid = clients.reduce((sum, c) => sum + (parseFloat(c.paid_amount) || 0), 0)
+    // إجراءات السداد
+    const paymentDone    = clients.filter(c => c.payment_status === 'paid').length
+    const paymentPending = clients.filter(c => c.payment_status !== 'paid').length
+
+    // إجراءات التمويل
+    const financingDone    = clients.filter(c => c.financing_status === 'approved').length
+    const financingPending = clients.filter(c => c.financing_status !== 'approved').length
+
+    // الحالات المعلقة (كل ما لم يكتمل السداد والتمويل معاً)
+    const pendingCases = clients.filter(
+      c => c.payment_status !== 'paid' || c.financing_status !== 'approved'
+    ).length
+
+    // تفاصيل حالات السداد
+    const paymentUnderReview    = clients.filter(c => c.payment_status === 'under_review').length
+    const paymentRequestCreated = clients.filter(c => c.payment_status === 'request_created').length
+
+    // تفاصيل حالات التمويل
+    const financingUnderReview    = clients.filter(c => c.financing_status === 'under_review').length
+    const financingRequestCreated = clients.filter(c => c.financing_status === 'request_created').length
+
+    const totalPaid   = clients.reduce((s, c) => s + (parseFloat(c.paid_amount) || 0), 0)
+    const totalDebt   = clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
     const totalProfit = clients.reduce(
-      (sum, c) => sum + calcProfit(c.debt_amount, c.paid_amount, c.commission_pct),
-      0
+      (s, c) => s + calcProfit(c.debt_amount, c.paid_amount, c.commission_pct), 0
     )
     const thisMonthDebt = thisMonthClients.reduce(
-      (sum, c) => sum + (parseFloat(c.debt_amount) || 0),
-      0
+      (s, c) => s + (parseFloat(c.debt_amount) || 0), 0
     )
 
     return {
       totalClients: clients.length,
-      paidClientsCount: paidClients.length,
-      pendingClientsCount: clients.length - paidClients.length,
-      totalDebt,
+      paymentDone,
+      paymentPending,
+      paymentUnderReview,
+      paymentRequestCreated,
+      financingDone,
+      financingPending,
+      financingUnderReview,
+      financingRequestCreated,
+      pendingCases,
       totalPaid,
+      totalDebt,
       totalProfit,
       thisMonthClients: thisMonthClients.length,
       thisMonthDebt,

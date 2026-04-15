@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -6,6 +6,7 @@ import {
   FileBarChart2,
   Calculator,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react'
 
 const navItems = [
@@ -59,10 +60,22 @@ export function Sidebar({ open, onClose }) {
         </a>
       </nav>
 
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-        <p className="text-xs text-gray-400 dark:text-gray-600 text-center">
-          نظام إدارة الديون
-        </p>
+      {/* صفحة المالك — في الأسفل */}
+      <div className="p-3 border-t border-gray-100 dark:border-gray-800">
+        <NavLink
+          to="/owner"
+          onClick={onClose}
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+              isActive
+                ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                : 'text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+            }`
+          }
+        >
+          <ShieldCheck size={19} />
+          <span>صفحة المالك</span>
+        </NavLink>
       </div>
     </aside>
   )

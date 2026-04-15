@@ -28,7 +28,7 @@ const inputCls =
 export function AddClientPage() {
   const { addClient } = useClients()
   const navigate = useNavigate()
-  const [submitStatus, setSubmitStatus] = useState(null) // 'success' | 'error' | null
+  const [submitStatus, setSubmitStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
   const {
@@ -39,15 +39,16 @@ export function AddClientPage() {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      status: 'pending',
+      payment_status: 'pending',
+      financing_status: 'pending',
       commission_pct: 10,
       debt_amount: '',
       paid_amount: '',
     },
   })
 
-  const debtAmount = parseFloat(watch('debt_amount')) || 0
-  const paidAmount = parseFloat(watch('paid_amount')) || 0
+  const debtAmount    = parseFloat(watch('debt_amount')) || 0
+  const paidAmount    = parseFloat(watch('paid_amount')) || 0
   const commissionPct = parseFloat(watch('commission_pct')) || 0
   const previewProfit = calcProfit(debtAmount, paidAmount, commissionPct)
 
@@ -55,15 +56,16 @@ export function AddClientPage() {
     setSubmitStatus(null)
     try {
       await addClient({
-        name: data.name.trim(),
-        national_id: data.national_id.trim(),
-        phone: data.phone?.trim() || null,
-        bank_name: data.bank_name || null,
-        debt_amount: parseFloat(data.debt_amount),
-        paid_amount: parseFloat(data.paid_amount),
-        commission_pct: parseFloat(data.commission_pct),
-        status: data.status,
-        notes: data.notes?.trim() || null,
+        name:              data.name.trim(),
+        national_id:       data.national_id.trim(),
+        phone:             data.phone?.trim() || null,
+        bank_name:         data.bank_name || null,
+        debt_amount:       parseFloat(data.debt_amount),
+        paid_amount:       parseFloat(data.paid_amount),
+        commission_pct:    parseFloat(data.commission_pct),
+        payment_status:    data.payment_status,
+        financing_status:  data.financing_status,
+        notes:             data.notes?.trim() || null,
       })
       setSubmitStatus('success')
       reset()
@@ -78,7 +80,7 @@ export function AddClientPage() {
     <div className="max-w-2xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">إضافة عميل جديد</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">يتم الحفظ تلقائياً في قاعدة البيانات</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">يتم الحفظ تلقائياً في المتصفح</p>
       </div>
 
       {submitStatus === 'success' && (
@@ -96,6 +98,7 @@ export function AddClientPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-5">
 
+        {/* البيانات الشخصية */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Field label="اسم العميل *" error={errors.name?.message}>
             <input
@@ -128,7 +131,7 @@ export function AddClientPage() {
             />
           </Field>
 
-          <Field label="البنك" error={errors.bank_name?.message}>
+          <Field label="البنك">
             <select {...register('bank_name')} className={inputCls}>
               <option value="">اختر البنك</option>
               {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -136,6 +139,7 @@ export function AddClientPage() {
           </Field>
         </div>
 
+        {/* البيانات المالية */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <Field label="مبلغ الدين (ر.س) *" error={errors.debt_amount?.message}>
             <input
@@ -168,7 +172,7 @@ export function AddClientPage() {
               type="number"
               {...register('commission_pct', {
                 required: 'نسبة العمولة مطلوبة',
-                min: { value: 0, message: 'يجب أن تكون 0 أو أكثر' },
+                min: { value: 0, message: '0 أو أكثر' },
                 max: { value: 100, message: 'لا تتجاوز 100%' },
               })}
               className={inputCls}
@@ -178,7 +182,7 @@ export function AddClientPage() {
           </Field>
         </div>
 
-        {/* Profit preview */}
+        {/* معاينة الربح */}
         {(debtAmount > 0 || paidAmount > 0) && (
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3 flex items-center justify-between">
             <span className="text-sm text-green-700 dark:text-green-400 font-medium">الربح المتوقع</span>
@@ -188,16 +192,31 @@ export function AddClientPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <Field label="الحالة">
-            <select {...register('status')} className={inputCls}>
-              <option value="pending">معلق</option>
-              <option value="paid">مكتمل</option>
-            </select>
-          </Field>
+        {/* الإجراءات */}
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">الإجراءات</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Field label="إجراءات السداد">
+              <select {...register('payment_status')} className={inputCls}>
+                <option value="pending">معلق</option>
+                <option value="under_review">تحت الدراسة</option>
+                <option value="request_created">إنشاء طلب</option>
+                <option value="paid">تم السداد</option>
+              </select>
+            </Field>
+
+            <Field label="إجراءات التمويل">
+              <select {...register('financing_status')} className={inputCls}>
+                <option value="pending">معلق لدى البنك</option>
+                <option value="under_review">تحت الدراسة</option>
+                <option value="request_created">إنشاء طلب</option>
+                <option value="approved">تم التمويل</option>
+              </select>
+            </Field>
+          </div>
         </div>
 
-        <Field label="ملاحظات" error={errors.notes?.message}>
+        <Field label="ملاحظات">
           <textarea
             {...register('notes')}
             className={`${inputCls} resize-none`}
