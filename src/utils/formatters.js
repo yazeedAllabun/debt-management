@@ -33,9 +33,8 @@ export function formatMonthYear(dateStr) {
   }
 }
 
-export function calcProfit(debtAmount, paidAmount, commissionPct) {
+export function calcProfit(debtAmount, commissionPct) {
   const debt = parseFloat(debtAmount) || 0
-  const paid = parseFloat(paidAmount) || 0
   const pct = parseFloat(commissionPct) || 0
-  return (debt - paid) * (pct / 100)
+  return debt * (pct / 100)
 }

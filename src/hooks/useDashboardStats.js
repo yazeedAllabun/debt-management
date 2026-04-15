@@ -35,10 +35,10 @@ export function useDashboardStats(clients) {
     const financingUnderReview    = clients.filter(c => c.financing_status === 'under_review').length
     const financingRequestCreated = clients.filter(c => c.financing_status === 'request_created').length
 
-    const totalPaid   = clients.reduce((s, c) => s + (parseFloat(c.paid_amount) || 0), 0)
+    const totalPaid   = clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
     const totalDebt   = clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
     const totalProfit = clients.reduce(
-      (s, c) => s + calcProfit(c.debt_amount, c.paid_amount, c.commission_pct), 0
+      (s, c) => s + calcProfit(c.debt_amount, c.commission_pct), 0
     )
     const thisMonthDebt = thisMonthClients.reduce(
       (s, c) => s + (parseFloat(c.debt_amount) || 0), 0

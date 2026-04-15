@@ -22,9 +22,9 @@ function buildMonthlyReport(clients) {
       catch { return false }
     })
     const totalDebt = monthClients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
-    const totalPaid = monthClients.reduce((s, c) => s + (parseFloat(c.paid_amount) || 0), 0)
+    const totalPaid = monthClients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
     const totalProfit = monthClients.reduce(
-      (s, c) => s + calcProfit(c.debt_amount, c.paid_amount, c.commission_pct), 0
+      (s, c) => s + calcProfit(c.debt_amount, c.commission_pct), 0
     )
     const paidCount = monthClients.filter(c => c.status === 'paid').length
     return {
@@ -47,8 +47,8 @@ export function ReportsPage() {
     clients: clients.length,
     paid: clients.filter(c => c.status === 'paid').length,
     debt: clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0),
-    paidAmount: clients.reduce((s, c) => s + (parseFloat(c.paid_amount) || 0), 0),
-    profit: clients.reduce((s, c) => s + calcProfit(c.debt_amount, c.paid_amount, c.commission_pct), 0),
+    paidAmount: clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0),
+    profit: clients.reduce((s, c) => s + calcProfit(c.debt_amount, c.commission_pct), 0),
   }), [clients])
 
   if (loading) return <LoadingSpinner text="جاري تحميل التقارير..." />
@@ -124,7 +124,7 @@ export function ReportsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700/50">
-                {['الشهر', 'عدد العملاء', 'المكتملة', 'إجمالي الديون', 'المبلغ المدفوع', 'الأرباح'].map(h => (
+                {['الشهر', 'عدد العملاء', 'المكتملة', 'إجمالي التسويات', 'الأرباح'].map(h => (
                   <th key={h} className="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">
                     {h}
                   </th>
@@ -138,7 +138,6 @@ export function ReportsPage() {
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatNumber(row.totalClients)}</td>
                   <td className="px-4 py-3 text-green-600 dark:text-green-400">{formatNumber(row.paidCount)}</td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{formatCurrency(row.totalDebt)}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{formatCurrency(row.totalPaid)}</td>
                   <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{formatCurrency(row.totalProfit)}</td>
                 </tr>
               ))}
@@ -148,7 +147,6 @@ export function ReportsPage() {
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.clients)}</td>
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.paid)}</td>
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatCurrency(totals.debt)}</td>
-                <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatCurrency(totals.paidAmount)}</td>
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatCurrency(totals.profit)}</td>
               </tr>
             </tbody>

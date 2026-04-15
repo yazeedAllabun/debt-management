@@ -30,6 +30,7 @@ export function AddClientPage() {
   const navigate = useNavigate()
   const [submitStatus, setSubmitStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [selectedBanks, setSelectedBanks] = useState([])
 
   const {
     register,
@@ -43,25 +44,27 @@ export function AddClientPage() {
       financing_status: 'pending',
       commission_pct: 10,
       debt_amount: '',
-      paid_amount: '',
     },
   })
 
   const debtAmount    = parseFloat(watch('debt_amount')) || 0
-  const paidAmount    = parseFloat(watch('paid_amount')) || 0
   const commissionPct = parseFloat(watch('commission_pct')) || 0
-  const previewProfit = calcProfit(debtAmount, paidAmount, commissionPct)
+  const previewProfit = calcProfit(debtAmount, commissionPct)
+
+  const toggleBank = (bank) => {
+    setSelectedBanks(prev =>
+      prev.includes(bank) ? prev.filter(b => b !== bank) : [...prev, bank]
+    )
+  }
 
   const onSubmit = async (data) => {
     setSubmitStatus(null)
     try {
       await addClient({
         name:              data.name.trim(),
-        national_id:       data.national_id.trim(),
         phone:             data.phone?.trim() || null,
-        bank_name:         data.bank_name || null,
+        bank_names:        selectedBanks,
         debt_amount:       parseFloat(data.debt_amount),
-        paid_amount:       parseFloat(data.paid_amount),
         commission_pct:    parseFloat(data.commission_pct),
         payment_status:    data.payment_status,
         financing_status:  data.financing_status,
@@ -69,6 +72,7 @@ export function AddClientPage() {
       })
       setSubmitStatus('success')
       reset()
+      setSelectedBanks([])
       setTimeout(() => navigate('/clients'), 1500)
     } catch (err) {
       setErrorMsg(err.message)
@@ -108,21 +112,10 @@ export function AddClientPage() {
             />
           </Field>
 
-          <Field label="رقم الهوية الوطنية *" error={errors.national_id?.message}>
-            <input
-              {...register('national_id', {
-                required: 'رقم الهوية مطلوب',
-                pattern: { value: /^[12]\d{9}$/, message: 'رقم هوية غير صحيح (10 أرقام)' },
-              })}
-              className={inputCls}
-              placeholder="1xxxxxxxxx"
-              maxLength={10}
-            />
-          </Field>
-
-          <Field label="رقم الجوال" error={errors.phone?.message}>
+          <Field label="رقم الجوال *" error={errors.phone?.message}>
             <input
               {...register('phone', {
+                required: 'رقم الجوال مطلوب',
                 pattern: { value: /^05\d{8}$/, message: 'رقم جوال غير صحيح (05xxxxxxxx)' },
               })}
               className={inputCls}
@@ -130,36 +123,51 @@ export function AddClientPage() {
               maxLength={10}
             />
           </Field>
+        </div>
 
-          <Field label="البنك">
-            <select {...register('bank_name')} className={inputCls}>
-              <option value="">اختر البنك</option>
-              {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </Field>
+        {/* البنوك — اختيار متعدد */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            البنك (يمكن اختيار أكثر من بنك)
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {BANKS.map(bank => {
+              const checked = selectedBanks.includes(bank)
+              return (
+                <button
+                  key={bank}
+                  type="button"
+                  onClick={() => toggleBank(bank)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors text-right ${
+                    checked
+                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300'
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                    checked ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {checked && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                  {bank}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* البيانات المالية */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <Field label="مبلغ الدين (ر.س) *" error={errors.debt_amount?.message}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <Field label="مبلغ التسوية (ر.س) *" error={errors.debt_amount?.message}>
             <input
               type="number"
               {...register('debt_amount', {
-                required: 'مبلغ الدين مطلوب',
+                required: 'المبلغ مطلوب',
                 min: { value: 1, message: 'يجب أن يكون أكبر من صفر' },
-              })}
-              className={inputCls}
-              placeholder="0"
-              step="0.01"
-            />
-          </Field>
-
-          <Field label="المبلغ المدفوع (ر.س) *" error={errors.paid_amount?.message}>
-            <input
-              type="number"
-              {...register('paid_amount', {
-                required: 'المبلغ المدفوع مطلوب',
-                min: { value: 0, message: 'لا يمكن أن يكون سالباً' },
               })}
               className={inputCls}
               placeholder="0"
@@ -183,7 +191,7 @@ export function AddClientPage() {
         </div>
 
         {/* معاينة الربح */}
-        {(debtAmount > 0 || paidAmount > 0) && (
+        {debtAmount > 0 && (
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3 flex items-center justify-between">
             <span className="text-sm text-green-700 dark:text-green-400 font-medium">الربح المتوقع</span>
             <span className="text-lg font-bold text-green-700 dark:text-green-400">
@@ -235,7 +243,7 @@ export function AddClientPage() {
           </button>
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => { reset(); setSelectedBanks([]) }}
             className="px-6 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
           >
             مسح

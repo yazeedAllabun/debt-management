@@ -4,14 +4,13 @@ import { formatDate, calcProfit } from './formatters'
 export function exportToExcel(clients, filename = 'تقرير-العملاء') {
   const rows = clients.map(c => ({
     'الاسم': c.name,
-    'رقم الهوية': c.national_id,
     'رقم الجوال': c.phone || '',
-    'البنك': c.bank_name || '',
-    'مبلغ الدين': c.debt_amount,
-    'المبلغ المدفوع': c.paid_amount,
+    'البنك': Array.isArray(c.bank_names) ? c.bank_names.join('، ') : (c.bank_name || ''),
+    'مبلغ التسوية': c.debt_amount,
     'العمولة %': c.commission_pct,
-    'الربح': calcProfit(c.debt_amount, c.paid_amount, c.commission_pct).toFixed(2),
-    'الحالة': c.status === 'paid' ? 'مكتمل' : 'معلق',
+    'الربح': calcProfit(c.debt_amount, c.commission_pct).toFixed(2),
+    'إجراءات السداد': c.payment_status,
+    'إجراءات التمويل': c.financing_status,
     'تاريخ الإضافة': formatDate(c.created_at),
   }))
 
