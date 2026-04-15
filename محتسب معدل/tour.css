@@ -1,0 +1,242 @@
+/* نظام الجولة التدريبية - التصميم */
+
+/* الخلفية المعتمة */
+.tour-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    z-index: 9998 !important;
+    transition: opacity 0.3s ease;
+    pointer-events: auto !important;
+}
+
+/* Spotlight - تسليط الضوء على العنصر */
+.tour-spotlight {
+    position: fixed !important;
+    background-color: transparent;
+    border: 3px solid #3b82f6;
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6),
+        0 0 20px rgba(59, 130, 246, 0.5);
+    z-index: 9999 !important;
+    transition: all 0.4s ease;
+    pointer-events: none;
+}
+
+/* مربع الشرح */
+.tour-tooltip {
+    position: fixed !important;
+    background: var(--bg, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    max-width: 360px;
+    min-width: 300px;
+    z-index: 10000 !important;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* تكبير tooltip لخطوة الفيديو */
+.tour-tooltip:has(.tour-video-container) {
+    max-width: 90vw;
+    width: 650px;
+    transform: translate(-50%, -50%);
+}
+
+/* حاوية الفيديو */
+.tour-video-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.tour-tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* رقم الخطوة */
+.tour-step-number {
+    display: inline-block;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    align-self: flex-start;
+}
+
+/* عنوان الخطوة */
+.tour-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+/* وصف الخطوة */
+.tour-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+}
+
+/* تذييل مربع الشرح */
+.tour-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    gap: 12px;
+}
+
+/* النقاط المؤشرة */
+.tour-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.tour-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.tour-dot.active {
+    background-color: #3b82f6;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* أزرار التحكم */
+.tour-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.tour-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tour-btn-skip {
+    background-color: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.tour-btn-skip:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.tour-btn-prev,
+.tour-btn-next {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.tour-btn-prev {
+    background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.tour-btn-prev:hover {
+    background: linear-gradient(135deg, #475569, #334155);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
+}
+
+.tour-btn-next:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* زر إعادة الجولة */
+.tour-restart-btn {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    font-weight: 700;
+}
+
+.tour-restart-btn:hover {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    transform: scale(1.1);
+}
+
+/* تنسيق للنمط الداكن */
+[data-theme="dark"] .tour-tooltip {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .tour-title {
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .tour-description {
+    color: #d1d5db;
+}
+
+[data-theme="dark"] .tour-btn-skip {
+    color: #9ca3af;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .tour-btn-skip:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+/* استجابة للشاشات الصغيرة */
+@media (max-width: 640px) {
+    .tour-tooltip {
+        max-width: calc(100vw - 40px);
+        min-width: auto;
+        left: 20px !important;
+        right: 20px;
+        width: auto;
+    }
+
+    /* تكبير tooltip للفيديو على الجوال */
+    .tour-tooltip:has(.tour-video-container) {
+        width: calc(100vw - 40px);
+        max-width: calc(100vw - 40px);
+        transform: translate(-0%, -90%);
+    }
+
+    .tour-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tour-buttons {
+        width: 100%;
+    }
+
+    .tour-btn {
+        flex: 1;
+    }
+
+    .tour-dots {
+        justify-content: center;
+    }
+}
