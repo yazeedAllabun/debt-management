@@ -43,13 +43,15 @@ export function ReportsPage() {
   const { clients, loading, error } = useClients()
   const monthlyData = useMemo(() => buildMonthlyReport(clients), [clients])
 
-  const totals = useMemo(() => ({
-    clients: clients.length,
-    paid: clients.filter(c => c.status === 'paid').length,
-    debt: clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0),
-    paidAmount: clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0),
-    profit: clients.reduce((s, c) => s + calcProfit(c.debt_amount, c.commission_pct), 0),
-  }), [clients])
+  const totals = useMemo(() => {
+    const total = clients.length
+    const mustafideen = clients.filter(c => c.payment_status === 'paid').length
+    const notBenefited = total - mustafideen
+    const completionRate = total > 0 ? Math.round((mustafideen / total) * 100) : 0
+    const debt = clients.reduce((s, c) => s + (parseFloat(c.debt_amount) || 0), 0)
+    const profit = clients.reduce((s, c) => s + calcProfit(c.debt_amount, c.commission_pct), 0)
+    return { total, mustafideen, notBenefited, completionRate, debt, profit }
+  }, [clients])
 
   if (loading) return <LoadingSpinner text="جاري تحميل التقارير..." />
   if (error) return <div className="text-center py-20 text-red-500">خطأ: {error}</div>
@@ -79,19 +81,46 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* Summary totals */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'إجمالي العملاء', value: formatNumber(totals.clients) },
-          { label: 'المكتملة', value: formatNumber(totals.paid) },
-          { label: 'إجمالي الديون', value: formatCurrency(totals.debt) },
-          { label: 'صافي الأرباح', value: formatCurrency(totals.profit) },
-        ].map(item => (
-          <div key={item.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center shadow-sm">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
-            <p className="text-xl font-bold text-gray-800 dark:text-gray-100 mt-1">{item.value}</p>
-          </div>
-        ))}
+      {/* Summary totals — 6 cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400">إجمالي العملاء</p>
+          <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{formatNumber(totals.total)}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-green-200 dark:border-green-800 p-4 text-center shadow-sm">
+          <p className="text-xs text-green-600 dark:text-green-400">عملاء مستفيدين</p>
+          <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-1">{formatNumber(totals.mustafideen)}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-red-200 dark:border-red-800 p-4 text-center shadow-sm">
+          <p className="text-xs text-red-500 dark:text-red-400">عملاء لم يستفيدوا</p>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{formatNumber(totals.notBenefited)}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400">إجمالي السداد</p>
+          <p className="text-xl font-bold text-gray-800 dark:text-gray-100 mt-1">{formatCurrency(totals.debt)}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center shadow-sm">
+          <p className="text-xs text-gray-500 dark:text-gray-400">إجمالي الربح</p>
+          <p className="text-xl font-bold text-gray-800 dark:text-gray-100 mt-1">{formatCurrency(totals.profit)}</p>
+        </div>
+        <div className={`rounded-2xl border p-4 text-center shadow-sm ${
+          totals.completionRate >= 70
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : totals.completionRate >= 40
+            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        }`}>
+          <p className="text-xs text-gray-500 dark:text-gray-400">نسبة الإنجاز</p>
+          <p className={`text-2xl font-bold mt-1 ${
+            totals.completionRate >= 70
+              ? 'text-green-700 dark:text-green-400'
+              : totals.completionRate >= 40
+              ? 'text-yellow-700 dark:text-yellow-400'
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {totals.completionRate}%
+          </p>
+        </div>
       </div>
 
       {/* Chart */}
@@ -144,8 +173,8 @@ export function ReportsPage() {
               {/* Totals row */}
               <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold">
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">الإجمالي</td>
-                <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.clients)}</td>
-                <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.paid)}</td>
+                <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.total)}</td>
+                <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatNumber(totals.mustafideen)}</td>
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatCurrency(totals.debt)}</td>
                 <td className="px-4 py-3 text-blue-700 dark:text-blue-300">{formatCurrency(totals.profit)}</td>
               </tr>
