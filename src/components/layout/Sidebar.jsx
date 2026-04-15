@@ -5,20 +5,18 @@ import {
   UserPlus,
   FileBarChart2,
   Calculator,
-  ExternalLink,
   ShieldCheck,
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/',           label: 'الرئيسية',    icon: LayoutDashboard },
-  { to: '/clients',    label: 'العملاء',     icon: Users },
-  { to: '/add-client', label: 'إضافة عميل', icon: UserPlus },
-  { to: '/reports',    label: 'التقارير',    icon: FileBarChart2 },
+  { to: '/',            label: 'الرئيسية',    icon: LayoutDashboard },
+  { to: '/clients',     label: 'العملاء',     icon: Users },
+  { to: '/add-client',  label: 'إضافة عميل', icon: UserPlus },
+  { to: '/reports',     label: 'التقارير',    icon: FileBarChart2 },
+  { to: '/calculator',  label: 'المحتسب',     icon: Calculator },
 ]
 
 export function Sidebar({ open, onClose }) {
-  const calculatorUrl = import.meta.env.VITE_CALCULATOR_URL || 'https://yazeedallabun.github.io/calculator'
-
   return (
     <aside className={`
       no-print fixed top-16 right-0 h-[calc(100vh-4rem)] w-64
@@ -45,19 +43,6 @@ export function Sidebar({ open, onClose }) {
             <span>{label}</span>
           </NavLink>
         ))}
-
-        {/* المحتسب */}
-        <a
-          href={calculatorUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onClose}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
-        >
-          <Calculator size={19} />
-          <span className="flex-1">المحتسب</span>
-          <ExternalLink size={13} className="text-gray-400" />
-        </a>
       </nav>
 
       {/* صفحة المالك — في الأسفل */}

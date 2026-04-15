@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang='ar' dir='rtl'>
+
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>التمويل الشخصي</title>
+    <link rel='stylesheet' href='styles.css'>
+    <link rel='stylesheet' href='tour.css'>
+    <style>
+        body {
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="calc-section active" id="calc-personal">
+        <div class="wrap">
+            <div class="container" style="position: relative;">
+                <button class="btn-ghost" id="clearCacheBtn" type="button"
+                    style="position: absolute; top: 10px; left: 10px; margin: 0; padding: 5px 10px; font-size: small; z-index: 100;"
+                    title="مسح جميع البيانات المخزنة وإعادة تحميل الصفحة">Cache</button>
+                <h2>التمويل الشخصي</h2>
+                <!-- اسم العميل -->
+                <div class="card-info" style="margin-bottom: 16px;">
+                    <label for="customerName">اسم العميل</label>
+                    <input class="salary-input" id="customerName" placeholder="أدخل اسم العميل" type="text"
+                        style="margin-top: 8px;" required />
+                    <label for="customerMobile" style="margin-top: 8px; display: block;">رقم جوال العميل</label>
+                    <input class="salary-input" id="customerMobile" placeholder="أدخل رقم الجوال" type="tel"
+                        inputmode="numeric" pattern="\d*" style="margin-top: 8px;" />
+                    <label for="amountToPay" style="margin-top: 8px; display: block;">المبلغ المراد سداده</label>
+                    <input class="salary-input" id="amountToPay" placeholder="أدخل المبلغ المراد سداده" type="number"
+                        min="0" step="0.01" inputmode="decimal" style="margin-top: 8px;" />
+                </div>
+                <!-- الصف الأول: الراتب — ملخص الالتزامات — المدة والنسبة -->
+                <div class="row-grid row-1">
+                    <!-- الراتب -->
+                    <div class="card">
+                        <div class="salary-row">
+                            <label for="salary">الراتب
+                                <span class="small-hint">(مع البدلات الثابتة فقط)</span>
+                            </label>
+                            <input class="salary-input" id="salary" placeholder="مثال: 14000" required="" type="number"
+                                inputmode="decimal" />
+                            <div class="error-message" id="salaryError" style="display:none;"></div>
+                        </div>
+                        <div class="role-col">
+                            <label style="display:flex;align-items:center;gap: 8px;"><input id="employee"
+                                    type="checkbox" />
+                                موظف</label>
+                            <label style="display:flex;align-items:center;gap: 8px;"><input id="retired"
+                                    type="checkbox" />
+                                متقاعد</label>
+                        </div>
+                    </div>
+                    <!-- المدة والنسبة -->
+                    <div class="card">
+                        <div class="months">
+                            <label for="months">المدة بالأشهر</label>
+                            <input id="months" max="60" min="6" placeholder="مثال: 48" step="1" type="number"
+                                inputmode="numeric" pattern="\d*" />
+                            <div class="error-message" id="monthsError" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="profit-rate">
+                            <label for="rate">نسبة الفائدة السنوية (%)</label>
+                            <input id="rate" min="0" placeholder="مثال: 9" step="0.01" type="number"
+                                inputmode="decimal" />
+                            <div class="error-message" id="rateError" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- الصف الثاني: الالتزامات أفقية -->
+                <div class="row-grid row-2">
+                    <label style="font-weight:800;margin-bottom:6px">الالتزامات</label>
+                    <div class="commitments-grid">
+                        <!-- الالتزام 1 -->
+                        <div class="card">
+                            <div class="commitmentTitle">
+                                <label for="commitment1">الالتزام الأول</label>
+                                <!-- <div class="impact ok hidden" id="impact1">غير مؤثر</div> -->
+                            </div>
+                            <div class="row-commit">
+                                <input id="commitment1" min="0" placeholder="المبلغ" type="number" value="0" />
+                                <select id="type1"></select>
+                            </div>
+                            <div id="warn1" class="warn hidden" style="color:#b91c1c;font-size:12px;margin-top:6px">يجب
+                                اختيار التزام</div>
+                            <div class="hint" id="hint1">الالتزام الالستهلاكي هو<b>مجموع</b> الالتزامات غير
+                                الشخصي والعقاري
+                                ويتضمن (البطاقات الائتمانية و السيارة وشركات التمويل وبنك التنمية)
+                            </div>
+                        </div>
+                        <!-- الالتزام 2 -->
+                        <div class="card hidden" id="commitment2Wrap">
+                            <div class="commitmentTitle">
+                                <label for="commitment2">الالتزام الثاني</label>
+                                <!-- <div class="impact ok hidden" id="impact2">غير مؤثر</div> -->
+                            </div>
+                            <div class="row-commit">
+                                <input id="commitment2" min="0" placeholder="المبلغ" type="number" value="0" />
+                                <select id="type2"></select>
+                            </div>
+                            <div id="warn2" class="warn hidden" style="color:#b91c1c;font-size:12px;margin-top:6px">يجب
+                                اختيار التزام</div>
+                            <div class="hint" id="hint2">الالتزام الالستهلاكي هو<b>مجموع</b> الالتزامات غير
+                                الشخصي والعقاري
+                                ويتضمن (البطاقات الائتمانية و السيارة وشركات التمويل وبنك التنمية)
+                            </div>
+                        </div>
+                        <!-- الالتزام 3 -->
+                        <div class="card hidden" id="commitment3Wrap">
+                            <div class="commitmentTitle">
+                                <label for="commitment3">الالتزام الثالث</label>
+                                <!-- <div class="impact ok hidden" id="impact3">غير مؤثر</div> --><!-- IGNORE -->
+                            </div>
+                            <div class="row-commit">
+                                <input id="commitment3" min="0" placeholder="المبلغ" type="number" value="0" />
+                                <select id="type3"></select>
+                            </div>
+                            <div id="warn3" class="warn hidden" style="color:#b91c1c;font-size:12px;margin-top:6px">
+                                يجب
+                                اختيار التزام</div>
+                            <div class="hint" id="hint3">الالتزام الالستهلاكي هو<b>مجموع</b> الالتزامات غير
+                                الشخصي والعقاري
+                                ويتضمن (البطاقات الائتمانية و السيارة وشركات التمويل وبنك التنمية)
+                            </div>
+                        </div>
+                        <!-- ملخص الالتزامات -->
+                        <div class="card">
+                            <label>ملخص الالتزامات</label>
+                            <div class="note">
+                                <div class="sumline"><b>المجموع:</b> <span id="sumAmt">0</span></div>
+                                <div class="sumline"><b>نسبة الاستقطاع:</b> <span id="sumPct">0%</span></div>
+                            </div>
+                            <!-- أزرار التحكم أسفل صف الالتزامات -->
+                            <div style="display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:6px">
+                                <button class="btn-ghost" id="addCommitBtn" type="button">إضافة التزام</button>
+                                <button class="btn-ghost hidden" id="removeCommitBtn" type="button">حذف التزام</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-group" style="margin-top: 16px;">
+                        <button id="calcBtn">احسب</button>
+                        <button class="btn-ghost" id="clearBtn" type="button">مسح</button>
+                    </div>
+                    <!-- التوضيحات -->
+                    <div class="card-explain" style="margin-top:6px">
+                        <div class="note" id="explainFriendly"></div>
+                        <div class="muted" id="explain" style="margin-top:6px"></div>
+                    </div>
+                </div>
+                <!-- خيارات التمويل -->
+                <div class="card hidden" id="financingOptionsCard" style="margin-bottom: 16px;">
+                    <div style="margin-bottom: 12px;">
+                        <small>لتغيير نسبة الاستقطاع حسب الجهة التمويلية حتى 75%.</small>
+                    </div>
+                    <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                        <input type="checkbox" id="deductionRate" style="width: 20px; height: 20px; cursor: pointer;">
+                        <label for="deductionRate" style="cursor: pointer; margin: 0;">احتساب على 75%</label>
+                    </div>
+                    <label for="financingOption" style="margin-bottom: 8px; display: block;">نوع الحساب</label>
+                    <div style="display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap;">
+                        <select id="financingOption"
+                            style="padding: 10px; flex: 1; min-width: 200px; border-radius: 8px;">
+                            <option value="full">كامل المبلغ</option>
+                            <option value="customAmount">مبلغ تمويل محدد</option>
+                            <option value="customInstallment">قسط شهري محدد</option>
+                        </select>
+                        <div id="customInputWrapper" class="hidden" style="flex: 1; min-width: 200px;">
+                            <input id="customValue" type="number" min="0" step="0.01" placeholder="أدخل المبلغ"
+                                style="padding: 10px; width: 100%; border-radius: 8px;" />
+                        </div>
+                    </div>
+                    <div class="error-message" id="customValueError" style="display:none; margin-top: 8px;"></div>
+                </div>
+                <!-- الجدول -->
+                <div class="tables" id="exportArea">
+                    <div class="table-header"
+                        style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+                        <h3 class="table-title">حسبة التمويل الشخصي (حسبة مبدئية)</h3>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <button aria-label="مشاركة النتيجة" class="icon-btn hidden" id="exportBtn"
+                                title="مشاركة النتيجة" type="button">مشاركة</button>
+                            <button aria-label="حفظ النتيجة" class="btn-ghost" id="saveResultBtn"
+                                type="button">حفظ</button>
+                        </div>
+                    </div>
+                    <h3 style="margin:0 0 8px">جدول التمويل</h3>
+                    <div class="table-wrap">
+                        <table class="vertical-table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">النتيجة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeRow">
+                                <!-- سيتم ملؤها من JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- زر إظهار جدول السياسات 
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn-ghost" id="togglePoliciesBtn" type="button">إظهار جدول السياسات</button>
+                    </div>
+                    <!-- جدول السياسات 
+                    <div id="policiesSection" class="hidden" style="margin-top: 30px;">
+                        <h3 style="margin:0 0 8px" id="policiesTitle">جدول السياسات</h3>
+                        <div class="table-wrap">
+                            <table id="policiesTable" class="vertical-table">
+                                <thead>
+                                    <tr>
+                                        <th>السياسة</th>
+                                        <th>الشرح</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="policiesBody">
+                                    <!-- سيتم ملؤها من JavaScript 
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>-->
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    </section>
+    <script src='personal.js'></script>
+    <script src='tour.js'></script>
+    <script>(function () { var theme = localStorage.getItem('theme'); if (theme) { document.body.setAttribute('data-theme', theme); } window.addEventListener('storage', function (e) { if (e.key === 'theme') { document.body.setAttribute('data-theme', e.newValue || ''); } }); })();</script>
+</body>
+
+</html>
