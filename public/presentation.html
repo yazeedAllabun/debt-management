@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام إدارة تسديد الديون — عرض تقديمي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #2563eb;
+      --blue2:   #1d4ed8;
+      --green:   #059669;
+      --purple:  #7c3aed;
+      --orange:  #d97706;
+      --gray:    #6b7280;
+      --dark:    #111827;
+      --light:   #f9fafb;
+      --border:  #e5e7eb;
+      --card:    #ffffff;
+    }
+
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: #f3f4f6;
+      color: var(--dark);
+      line-height: 1.7;
+    }
+
+    /* ══ COVER ══ */
+    .cover {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 40%, #7c3aed 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+      top: -200px; left: -200px;
+    }
+    .cover::after {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+      bottom: -100px; right: -100px;
+    }
+    .cover-badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 8px 24px;
+      border-radius: 100px;
+      font-size: 13px;
+      margin-bottom: 32px;
+      backdrop-filter: blur(8px);
+    }
+    .cover h1 {
+      font-size: 56px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .cover h1 span { color: #93c5fd; }
+    .cover p {
+      font-size: 20px;
+      color: rgba(255,255,255,0.8);
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+    .cover-stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .cover-stat {
+      text-align: center;
+      color: #fff;
+    }
+    .cover-stat .num {
+      font-size: 40px;
+      font-weight: 900;
+      color: #93c5fd;
+    }
+    .cover-stat .lbl {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+    }
+    .cover-divider {
+      width: 1px;
+      height: 60px;
+      background: rgba(255,255,255,0.2);
+      align-self: center;
+    }
+
+    /* ══ SECTIONS ══ */
+    .section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 32px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .section-heading {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 16px;
+      color: var(--gray);
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ══ PROBLEM ══ */
+    .problem-bg {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .problem-card {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .problem-card .icon { font-size: 28px; margin-bottom: 12px; }
+    .problem-card h4 { font-size: 16px; font-weight: 700; color: #991b1b; margin-bottom: 8px; }
+    .problem-card p { font-size: 14px; color: #7f1d1d; line-height: 1.6; }
+
+    /* ══ FEATURES ══ */
+    .features-bg { background: var(--light); }
+    .feature-block {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 24px;
+      align-items: start;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .feature-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .feature-icon.blue   { background: #eff6ff; }
+    .feature-icon.green  { background: #ecfdf5; }
+    .feature-icon.purple { background: #f5f3ff; }
+    .feature-icon.orange { background: #fffbeb; }
+    .feature-icon.pink   { background: #fdf2f8; }
+    .feature-icon.teal   { background: #f0fdfa; }
+    .feature-icon.indigo { background: #eef2ff; }
+
+    .feature-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      font-size: 15px;
+      color: var(--gray);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tag.blue   { background: #dbeafe; color: #1d4ed8; }
+    .tag.green  { background: #d1fae5; color: #065f46; }
+    .tag.purple { background: #ede9fe; color: #5b21b6; }
+    .tag.orange { background: #fef3c7; color: #92400e; }
+    .tag.gray   { background: #f3f4f6; color: #374151; }
+
+    /* ══ BENEFITS ══ */
+    .benefits-bg {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+    }
+    .benefits-bg .section-title { color: #93c5fd; }
+    .benefits-bg .section-heading { color: #fff; }
+    .benefits-bg .section-sub { color: rgba(255,255,255,0.7); }
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .benefit-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .benefit-card .icon { font-size: 36px; margin-bottom: 16px; }
+    .benefit-card h4 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .benefit-card p { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; }
+
+    /* ══ ROADMAP ══ */
+    .roadmap-bg { background: #fff; border-top: 1px solid var(--border); }
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .roadmap-card {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+    .roadmap-card .badge {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 100px;
+    }
+    .roadmap-card h4 { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 8px; margin-top: 8px; }
+    .roadmap-card p  { font-size: 14px; color: var(--gray); }
+
+    /* ══ FOOTER ══ */
+    .footer {
+      background: var(--dark);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 40px 32px;
+      font-size: 14px;
+    }
+    .footer strong { color: #fff; }
+
+    /* ══ DIVIDER ══ */
+    .wave-divider { text-align: center; font-size: 24px; padding: 8px 0; opacity: 0.15; }
+
+    /* ══ PRINT ══ */
+    @media print {
+      body { background: #fff; }
+      .cover { min-height: auto; padding: 80px 60px; page-break-after: always; }
+      .cover h1 { font-size: 42px; }
+      .section { padding: 48px 32px; }
+      .feature-block { break-inside: avoid; }
+      .problem-card { break-inside: avoid; }
+      .benefit-card { break-inside: avoid; }
+      .roadmap-card { break-inside: avoid; }
+      .benefits-bg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    @media (max-width: 640px) {
+      .cover h1 { font-size: 32px; }
+      .problem-grid, .benefits-grid, .roadmap-grid { grid-template-columns: 1fr; }
+      .cover-stats { gap: 24px; }
+      .cover-divider { display: none; }
+      .feature-block { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ COVER ══════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">🚀 نظام متكامل لإدارة تسديد الديون</div>
+  <h1>نظام إدارة<br /><span>تسديد الديون</span></h1>
+  <p>منصة رقمية ذكية تُحوّل عمليات متابعة العملاء والديون والأرباح إلى لوحة تحكم واحدة سهلة الاستخدام</p>
+  <div class="cover-stats">
+    <div class="cover-stat">
+      <div class="num">7</div>
+      <div class="lbl">بطاقات إحصائية</div>
+    </div>
+    <div class="cover-divider"></div>
+    <div class="cover-stat">
+      <div class="num">6</div>
+      <div class="lbl">أقسام رئيسية</div>
+    </div>
+    <div class="cover-divider"></div>
+    <div class="cover-stat">
+      <div class="num">100%</div>
+      <div class="lbl">عربي متكامل</div>
+    </div>
+    <div class="cover-divider"></div>
+    <div class="cover-stat">
+      <div class="num">∞</div>
+      <div class="lbl">قابل للتطوير</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ PROBLEM ══════════════════════════════ -->
+<div class="problem-bg">
+  <div class="section">
+    <div class="section-title">المشكلة</div>
+    <div class="section-heading">تحديات شركات تسديد الديون اليوم</div>
+    <div class="section-sub">معظم الشركات تعتمد على الورق أو Excel مما يسبب فوضى في المتابعة وضياع البيانات</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">📋</div>
+        <h4>تتبع يدوي ومتفرق</h4>
+        <p>بيانات العملاء موزعة بين ورق وExcel وواتساب مما يصعّب الحصول على صورة واضحة</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">💸</div>
+        <h4>حساب أرباح خاطئ</h4>
+        <p>حساب العمولات والأرباح يدوياً يعرّضها للخطأ ويأخذ وقتاً طويلاً</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">⏰</div>
+        <h4>تأخر المتابعة</h4>
+        <p>الحالات المعلقة تضيع بين الموظفين وتتأخر المتابعة مع البنوك والعملاء</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">📊</div>
+        <h4>غياب التقارير</h4>
+        <p>لا يوجد ملخص واضح لأداء الشركة شهرياً أو معرفة إنتاجية كل موظف</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ FEATURES ══════════════════════════════ -->
+<div class="features-bg">
+  <div class="section">
+    <div class="section-title">الحل</div>
+    <div class="section-heading">كل ما تحتاجه في مكان واحد</div>
+    <div class="section-sub">منظومة متكاملة تغطي كل جوانب عمل شركة تسديد الديون من إضافة العميل حتى احتساب الربح</div>
+
+    <!-- 1. Dashboard -->
+    <div class="feature-block">
+      <div class="feature-icon blue">📊</div>
+      <div>
+        <div class="feature-title">لوحة التحكم الرئيسية</div>
+        <div class="feature-desc">
+          نظرة شاملة وفورية على حالة الشركة بأكملها. تعرض 7 بطاقات إحصائية تشمل إجمالي العملاء، إجراءات السداد والتمويل، الحالات المعلقة، إجمالي السداد، الأرباح، وإنتاجية الشهر الحالي — كل ذلك يتحدث تلقائياً عند إضافة أي عميل جديد.
+        </div>
+        <div class="feature-tags">
+          <span class="tag blue">7 بطاقات إحصائية</span>
+          <span class="tag green">تحديث فوري</span>
+          <span class="tag gray">رسم بياني شهري</span>
+          <span class="tag gray">آخر العملاء المضافين</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Clients -->
+    <div class="feature-block">
+      <div class="feature-icon green">👥</div>
+      <div>
+        <div class="feature-title">إدارة العملاء</div>
+        <div class="feature-desc">
+          جدول شامل لجميع العملاء مع إمكانية البحث الفوري بالاسم أو رقم الجوال. يعرض لكل عميل: اسمه، رقم جواله، البنوك المرتبطة، مبلغ التسوية، الربح، وحالة السداد والتمويل. يمكن حذف العميل بضغطة واحدة.
+        </div>
+        <div class="feature-tags">
+          <span class="tag green">بحث فوري</span>
+          <span class="tag blue">فلترة حسب الحالة</span>
+          <span class="tag orange">تصدير Excel</span>
+          <span class="tag gray">طباعة مباشرة</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Add Client -->
+    <div class="feature-block">
+      <div class="feature-icon purple">➕</div>
+      <div>
+        <div class="feature-title">إضافة عميل جديد</div>
+        <div class="feature-desc">
+          نموذج ذكي يجمع كل بيانات العميل في صفحة واحدة. يدعم اختيار أكثر من بنك للعميل الواحد، ويحسب الربح المتوقع تلقائياً لحظة إدخال المبلغ والعمولة. ثلاثة أزرار عمل: حفظ، حفظ وانتقال للمحتسب، إلغاء.
+        </div>
+        <div class="feature-tags">
+          <span class="tag purple">اختيار متعدد للبنوك</span>
+          <span class="tag green">حساب الربح فوري</span>
+          <span class="tag blue">4 حالات للسداد</span>
+          <span class="tag blue">4 حالات للتمويل</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Reports -->
+    <div class="feature-block">
+      <div class="feature-icon orange">📈</div>
+      <div>
+        <div class="feature-title">التقارير الشهرية</div>
+        <div class="feature-desc">
+          تقرير شامل يغطي آخر 12 شهراً. يعرض 6 بطاقات ملخص تشمل: إجمالي العملاء، المستفيدين، غير المستفيدين، إجمالي السداد، الأرباح، ونسبة الإنجاز (تتلون تلقائياً: أخضر إذا تجاوزت 70%، أصفر بين 40-70%، أحمر دون 40%). مع رسم بياني وجدول تفصيلي شهري.
+        </div>
+        <div class="feature-tags">
+          <span class="tag orange">نسبة إنجاز ذكية</span>
+          <span class="tag blue">رسم بياني 12 شهر</span>
+          <span class="tag green">تصدير Excel</span>
+          <span class="tag gray">طباعة التقرير</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Calculator -->
+    <div class="feature-block">
+      <div class="feature-icon teal">🧮</div>
+      <div>
+        <div class="feature-title">المحتسب</div>
+        <div class="feature-desc">
+          محتسب التمويل مدمج مباشرة داخل النظام — لا حاجة لفتح موقع خارجي. يحتوي على تبويبين: محتسب التمويل الشخصي ومحتسب شركات التمويل. يمكن الوصول إليه بضغطة واحدة من أي صفحة عبر الزر العائم، أو الانتقال إليه مباشرة بعد حفظ العميل.
+        </div>
+        <div class="feature-tags">
+          <span class="tag blue">محتسب التمويل الشخصي</span>
+          <span class="tag purple">محتسب شركات التمويل</span>
+          <span class="tag green">وصول سريع من كل صفحة</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Owner Page -->
+    <div class="feature-block">
+      <div class="feature-icon indigo">🔐</div>
+      <div>
+        <div class="feature-title">صفحة المالك</div>
+        <div class="feature-desc">
+          صفحة محمية بكلمة مرور خاصة بالمالك فقط. تعرض الملخص المالي الكامل مع صافي الربح الإجمالي كأول ما يراه المالك عند الدخول. بالإضافة لإدارة شاملة للموظفين: إضافة، حذف، وتعيين صلاحيات لكل موظف.
+        </div>
+        <div class="feature-tags">
+          <span class="tag purple">محمية بكلمة مرور</span>
+          <span class="tag green">صافي الربح الإجمالي</span>
+          <span class="tag blue">إدارة الموظفين</span>
+          <span class="tag orange">تعيين الصلاحيات</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Employees -->
+    <div class="feature-block">
+      <div class="feature-icon pink">👨‍💼</div>
+      <div>
+        <div class="feature-title">إنتاجية الموظفين</div>
+        <div class="feature-desc">
+          صفحة مخصصة للمالك تعرض إنتاجية كل موظف بشكل مرئي واضح. لكل موظف بطاقة تعرض: عدد عملائه، إجمالي مبالغ تسوياته، الأرباح الناتجة عنه، وشريط تقدم يوضح نسبة إنجازه (عدد من تم سداده ÷ إجمالي عملائه). تظهر هذه الصفحة في القائمة الجانبية فقط بعد دخول المالك.
+        </div>
+        <div class="feature-tags">
+          <span class="tag blue">إنتاجية كل موظف</span>
+          <span class="tag green">شريط تقدم مرئي</span>
+          <span class="tag purple">للمالك فقط</span>
+          <span class="tag gray">ربط تلقائي بالعملاء</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ BENEFITS ══════════════════════════════ -->
+<div class="benefits-bg">
+  <div class="section">
+    <div class="section-title">لماذا هذا النظام؟</div>
+    <div class="section-heading">مزايا تجعل الفرق</div>
+    <div class="section-sub">صُمِّم خصيصاً لشركات تسديد الديون في السوق السعودي</div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="icon">🌙</div>
+        <h4>وضع ليلي ونهاري</h4>
+        <p>يدعم الوضع الليلي والنهاري لراحة العيون في كل الأوقات</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">📱</div>
+        <h4>متوافق مع الجوال</h4>
+        <p>يعمل بشكل مثالي على الجوال والتابلت والكمبيوتر</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">⚡</div>
+        <h4>سريع وفوري</h4>
+        <p>لا انتظار، كل البيانات تُحفظ وتُعرض فورياً بدون تأخير</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">🔒</div>
+        <h4>أمان وخصوصية</h4>
+        <p>البيانات المالية محمية بكلمة مرور خاصة بالمالك فقط</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">🖨️</div>
+        <h4>طباعة وتصدير</h4>
+        <p>تصدير التقارير بصيغة Excel أو طباعتها مباشرة بضغطة واحدة</p>
+      </div>
+      <div class="benefit-card">
+        <div class="icon">🇸🇦</div>
+        <h4>عربي 100%</h4>
+        <p>واجهة عربية كاملة RTL مع خط عربي احترافي وتنسيق العملة بالريال</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ ROADMAP ══════════════════════════════ -->
+<div class="roadmap-bg">
+  <div class="section">
+    <div class="section-title">المستقبل</div>
+    <div class="section-heading">ما القادم في النظام؟</div>
+    <div class="section-sub">النظام مُصمَّم للنمو — كل ميزة قادمة تبني على ما تم إنجازه</div>
+    <div class="roadmap-grid">
+      <div class="roadmap-card">
+        <div class="badge">قريباً</div>
+        <h4>🔑 تسجيل دخول متعدد المستخدمين</h4>
+        <p>كل موظف يدخل بحسابه الخاص، والمالك يتحكم بالصلاحيات من لوحة إدارة مركزية</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="badge">قريباً</div>
+        <h4>☁️ قاعدة بيانات سحابية</h4>
+        <p>ربط Supabase حتى يتشارك جميع الموظفين نفس البيانات من أي جهاز في أي مكان</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="badge">مخطط</div>
+        <h4>📲 رمز تحقق عبر الجوال</h4>
+        <p>استعادة كلمة المرور عبر رسالة نصية أو واتساب لمزيد من الأمان</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="badge">مخطط</div>
+        <h4>🔔 تنبيهات ومتابعة</h4>
+        <p>تنبيهات تلقائية للحالات المعلقة وتذكير بمواعيد متابعة العملاء مع البنوك</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ FOOTER ══════════════════════════════ -->
+<div class="footer">
+  <p style="font-size:18px; font-weight:700; color:#fff; margin-bottom:8px;">نظام إدارة تسديد الديون</p>
+  <p>منصة رقمية متكاملة لشركات تسديد الديون في المملكة العربية السعودية</p>
+  <p style="margin-top:16px; font-size:12px;">© 2026 جميع الحقوق محفوظة</p>
+</div>
+
+</body>
+</html>
