@@ -3,9 +3,15 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { calcProfit, formatCurrency } from '../../utils/formatters'
+import { MultiSelect } from '../ui/MultiSelect'
 import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
 
 const BANKS = [
+  'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
+  'العربي الوطني', 'السعودي الفرنسي', 'الجزيرة', 'الإمارات دبي الوطني', 'أخرى',
+]
+
+const FINANCING_COMPANIES = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
   'العربي الوطني', 'السعودي الفرنسي', 'الجزيرة', 'الإمارات دبي الوطني', 'أخرى',
 ]
@@ -31,6 +37,7 @@ export function AddClientPage() {
   const [submitStatus, setSubmitStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [selectedBanks, setSelectedBanks] = useState([])
+  const [selectedFinancing, setSelectedFinancing] = useState([])
   const employees = (() => { try { return JSON.parse(localStorage.getItem('employees') || '[]') } catch { return [] } })()
 
   const {
@@ -52,26 +59,22 @@ export function AddClientPage() {
   const commissionPct = parseFloat(watch('commission_pct')) || 0
   const previewProfit = calcProfit(debtAmount, commissionPct)
 
-  const toggleBank = (bank) => {
-    setSelectedBanks(prev =>
-      prev.includes(bank) ? prev.filter(b => b !== bank) : [...prev, bank]
-    )
-  }
-
   const saveClient = async (data) => {
     await addClient({
-      name:             data.name.trim(),
-      phone:            data.phone?.trim() || null,
-      bank_names:       selectedBanks,
-      added_by:         data.added_by || null,
-      debt_amount:      parseFloat(data.debt_amount),
-      commission_pct:   parseFloat(data.commission_pct),
-      payment_status:   data.payment_status,
-      financing_status: data.financing_status,
-      notes:            data.notes?.trim() || null,
+      name:               data.name.trim(),
+      phone:              data.phone?.trim() || null,
+      bank_names:         selectedBanks,
+      financing_companies: selectedFinancing,
+      added_by:           data.added_by || null,
+      debt_amount:        parseFloat(data.debt_amount),
+      commission_pct:     parseFloat(data.commission_pct),
+      payment_status:     data.payment_status,
+      financing_status:   data.financing_status,
+      notes:              data.notes?.trim() || null,
     })
     reset()
     setSelectedBanks([])
+    setSelectedFinancing([])
   }
 
   const onSave = async (data) => {
@@ -154,39 +157,25 @@ export function AddClientPage() {
           </Field>
         )}
 
-        {/* البنوك — اختيار متعدد */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            البنك (يمكن اختيار أكثر من بنك)
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {BANKS.map(bank => {
-              const checked = selectedBanks.includes(bank)
-              return (
-                <button
-                  key={bank}
-                  type="button"
-                  onClick={() => toggleBank(bank)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors text-right ${
-                    checked
-                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300'
-                  }`}
-                >
-                  <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
-                    checked ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}>
-                    {checked && (
-                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </span>
-                  {bank}
-                </button>
-              )
-            })}
-          </div>
+        {/* البنوك وشركات التمويل */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <Field label="بنك الدين">
+            <MultiSelect
+              options={BANKS}
+              selected={selectedBanks}
+              onChange={setSelectedBanks}
+              placeholder="اختر البنك..."
+            />
+          </Field>
+
+          <Field label="شركة التمويل">
+            <MultiSelect
+              options={FINANCING_COMPANIES}
+              selected={selectedFinancing}
+              onChange={setSelectedFinancing}
+              placeholder="اختر شركة التمويل..."
+            />
+          </Field>
         </div>
 
         {/* البيانات المالية */}
@@ -282,7 +271,7 @@ export function AddClientPage() {
           </button>
           <button
             type="button"
-            onClick={() => { reset(); setSelectedBanks([]); navigate(-1) }}
+            onClick={() => { reset(); setSelectedBanks([]); setSelectedFinancing([]); navigate(-1) }}
             className="px-6 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
           >
             إلغاء
