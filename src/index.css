@@ -18,11 +18,76 @@ body {
 
 /* Print styles */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .no-print {
     display: none !important;
   }
+
   .print-full {
     width: 100% !important;
     margin: 0 !important;
+    padding: 0 !important;
   }
+
+  body {
+    background: white !important;
+    font-size: 12px;
+  }
+
+  /* إخفاء الهيدر والسايدبار */
+  header, aside, nav, .no-print {
+    display: none !important;
+  }
+
+  /* المحتوى الرئيسي يأخذ كل العرض */
+  main {
+    margin: 0 !important;
+    padding: 12px !important;
+    width: 100% !important;
+  }
+
+  /* بطاقات الإحصائيات */
+  .rounded-2xl, .rounded-xl {
+    border-radius: 8px !important;
+  }
+
+  /* جدول العملاء */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+  }
+
+  th, td {
+    padding: 6px 8px !important;
+    border: 1px solid #e5e7eb !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  th {
+    background-color: #f3f4f6 !important;
+    font-weight: 700 !important;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #fafafa !important;
+  }
+
+  /* الكروت الملونة تحتفظ بألوانها */
+  [class*="bg-green"] { background-color: #dcfce7 !important; }
+  [class*="bg-red"]   { background-color: #fee2e2 !important; }
+  [class*="bg-blue"]  { background-color: #dbeafe !important; }
+  [class*="bg-yellow"]{ background-color: #fef9c3 !important; }
+  [class*="bg-purple"]{ background-color: #f3e8ff !important; }
+
+  /* فاصل الصفحة */
+  .page-break { page-break-before: always; }
+
+  /* لا فاصل داخل البطاقات */
+  .rounded-2xl { break-inside: avoid; }
 }
