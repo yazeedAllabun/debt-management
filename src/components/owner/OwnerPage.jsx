@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { useEmployees } from '../../hooks/useEmployees'
 import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
+import { supabase } from '../../lib/supabase'
 import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
 
-/* ─── PIN helpers (localStorage) ─── */
-const PIN_KEY   = 'owner_pin'
-const getPin    = ()  => { const v = localStorage.getItem(PIN_KEY); return v ? atob(v) : null }
-const savePin   = (p) => localStorage.setItem(PIN_KEY, btoa(p))
+/* ─── PIN helpers (Supabase) ─── */
+const fetchPin = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_pin').single()
+  return data?.value ? atob(data.value) : null
+}
+const savePin = async (p) => {
+  await supabase.from('settings').upsert({ key: 'owner_pin', value: btoa(p) })
+}
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
@@ -86,14 +91,9 @@ function EmployeeForm({ onSave, onCancel, saving }) {
 export function OwnerPage() {
   const navigate = useNavigate()
   const { isOwner, ownerLogin, ownerLogout } = useOwnerSession()
-  const storedPin   = getPin()
-  const isFirstTime = !storedPin
 
-  const [step, setStep]             = useState(() => {
-    if (isFirstTime) return 'setup'
-    if (isOwner) return 'dashboard'
-    return 'login'
-  })
+  const [step, setStep]             = useState('loading')
+  const [storedPin, setStoredPin]   = useState(null)
   const [pin, setPin]               = useState('')
   const [confirmPin, setConfirm]    = useState('')
   const [newPin, setNewPin]         = useState('')
@@ -108,22 +108,34 @@ export function OwnerPage() {
   const stats = useDashboardStats(clients)
   const { employees, loading: empsLoading, addEmployee, deleteEmployee } = useEmployees()
 
+  /* جلب PIN عند التحميل */
+  useEffect(() => {
+    fetchPin().then(p => {
+      setStoredPin(p)
+      if (!p)       setStep('setup')
+      else if (isOwner) setStep('dashboard')
+      else          setStep('login')
+    })
+  }, [isOwner])
+
   const handleAddEmployee = async (empData) => {
     setSaving(true)
-    try {
-      await addEmployee(empData)
-      setShowForm(false)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setSaving(false)
-    }
+    try { await addEmployee(empData); setShowForm(false) }
+    catch (e) { setError(e.message) }
+    finally { setSaving(false) }
   }
 
   const handleDeleteEmployee = async (id) => {
     if (!window.confirm('هل تريد حذف هذا الموظف؟')) return
     try { await deleteEmployee(id) } catch (e) { setError(e.message) }
   }
+
+  /* ── LOADING ── */
+  if (step === 'loading') return (
+    <div className="flex items-center justify-center py-32">
+      <div className="text-gray-400 dark:text-gray-500">جاري التحميل...</div>
+    </div>
+  )
 
   /* ── SETUP ── */
   if (step === 'setup') return (
@@ -140,13 +152,17 @@ export function OwnerPage() {
         <div className="space-y-3 text-right">
           <div className="relative">
             <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" />
-            <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+            <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
-          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور"
-            onKeyDown={e => { if(e.key==='Enter'){ if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }}} />
+          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" />
         </div>
-        <button onClick={() => { if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+        <button onClick={async () => {
+          if (pin.length < 4) return setError('4 أحرف على الأقل')
+          if (pin !== confirmPin) return setError('كلمتا المرور غير متطابقتين')
+          await savePin(pin); setStoredPin(pin); setError(''); ownerLogin(); setStep('dashboard')
+        }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           تعيين كلمة المرور
         </button>
       </div>
@@ -167,10 +183,12 @@ export function OwnerPage() {
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="relative text-right">
           <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور"
-            onKeyDown={e => { if(e.key==='Enter'){ if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}} />
-          <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+            onKeyDown={e => { if (e.key === 'Enter') { if (pin === storedPin) { setError(''); ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}} />
+          <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
         </div>
-        <button onClick={() => { if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}
+        <button onClick={() => { if (pin === storedPin) { setError(''); ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}
           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           دخول
         </button>
@@ -191,8 +209,12 @@ export function OwnerPage() {
           <input type="password" value={confirmNew} onChange={e => setConfirmNew(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور الجديدة" />
         </div>
         <div className="flex gap-3">
-          <button onClick={() => { if(pin!==getPin())return setError('كلمة المرور الحالية غير صحيحة'); if(newPin.length<4)return setError('4 أرقام على الأقل'); if(newPin!==confirmNew)return setError('كلمتا المرور غير متطابقتين'); savePin(newPin); setError(''); setPin(''); setNewPin(''); setConfirmNew(''); setStep('dashboard') }}
-            className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+          <button onClick={async () => {
+            if (pin !== storedPin) return setError('كلمة المرور الحالية غير صحيحة')
+            if (newPin.length < 4) return setError('4 أحرف على الأقل')
+            if (newPin !== confirmNew) return setError('كلمتا المرور غير متطابقتين')
+            await savePin(newPin); setStoredPin(newPin); setError(''); setPin(''); setNewPin(''); setConfirmNew(''); setStep('dashboard')
+          }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             حفظ
           </button>
           <button onClick={() => { setStep('dashboard'); setError('') }}
@@ -207,7 +229,6 @@ export function OwnerPage() {
   /* ── OWNER DASHBOARD ── */
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/')} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
@@ -233,7 +254,6 @@ export function OwnerPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
         {[{ key: 'overview', label: 'الملخص المالي', icon: ShieldCheck }, { key: 'employees', label: 'الموظفون', icon: Users }].map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
@@ -247,7 +267,6 @@ export function OwnerPage() {
         ))}
       </div>
 
-      {/* ── OVERVIEW TAB ── */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="bg-gradient-to-l from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
@@ -271,7 +290,6 @@ export function OwnerPage() {
         </div>
       )}
 
-      {/* ── EMPLOYEES TAB ── */}
       {activeTab === 'employees' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -288,7 +306,6 @@ export function OwnerPage() {
           </div>
 
           {showForm && <EmployeeForm onSave={handleAddEmployee} onCancel={() => setShowForm(false)} saving={saving} />}
-
           {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
 
           {empsLoading ? (
