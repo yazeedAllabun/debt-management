@@ -1,5 +1,6 @@
-import { Sun, Moon, Building2, Menu } from 'lucide-react'
+import { Sun, Moon, Menu } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
+import logoImg from '../../assets/logo.jpg'
 
 export function Header({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme()
@@ -18,14 +19,14 @@ export function Header({ onMenuClick }) {
         </button>
 
         {/* Logo */}
-        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center overflow-hidden shrink-0">
-          <Building2 size={20} className="text-blue-600 dark:text-blue-400" />
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden shrink-0 bg-white">
+          <img src={logoImg} alt="شعار مكتب راكان" className="w-full h-full object-contain" />
         </div>
 
         {/* Company name */}
         <div>
           <h1 className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-100 leading-tight">
-            شركة تسديد الديون
+            مكتب راكان للعقارات
           </h1>
           <p className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">لوحة التحكم</p>
         </div>
