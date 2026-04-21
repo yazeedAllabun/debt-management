@@ -16,7 +16,7 @@ export function ClientsTable({ clients, onDelete }) {
       <table className="w-full text-sm print:text-xs">
         <thead>
           <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-            {['الاسم', 'رقم الجوال', 'البنك', 'مبلغ التسوية', 'الربح', 'إجراءات السداد', 'تاريخ الإضافة'].map(h => (
+            {['الاسم', 'رقم الجوال', 'البنك', 'مبلغ التسوية', 'الربح', 'إجراءات السداد', 'إجراءات التمويل', 'تاريخ الإضافة'].map(h => (
               <th key={h} className="px-3 py-3 text-right font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {h}
               </th>
@@ -39,6 +39,7 @@ export function ClientsTable({ clients, onDelete }) {
                 {formatCurrency(calcProfit(c.debt_amount, c.commission_pct))}
               </td>
               <td className="px-3 py-2.5"><Badge status={c.payment_status} type="payment" /></td>
+              <td className="px-3 py-2.5"><Badge status={c.financing_status} type="financing" /></td>
               <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatDate(c.created_at)}</td>
               <td className="px-3 py-2.5 no-print">
                 <button
