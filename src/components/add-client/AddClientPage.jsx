@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { calcProfit, formatCurrency } from '../../utils/formatters'
 import { MultiSelect } from '../ui/MultiSelect'
 import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 const BANKS = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
@@ -41,7 +42,12 @@ export function AddClientPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [selectedBanks, setSelectedBanks] = useState([])
   const [selectedFinancing, setSelectedFinancing] = useState([])
-  const employees = (() => { try { return JSON.parse(localStorage.getItem('employees') || '[]') } catch { return [] } })()
+  const [employees, setEmployees] = useState([])
+
+  useEffect(() => {
+    supabase.from('employees').select('id, name, role').order('name')
+      .then(({ data }) => setEmployees(data || []))
+  }, [])
 
   const {
     register,
@@ -107,7 +113,7 @@ export function AddClientPage() {
     <div className="max-w-2xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">إضافة عميل جديد</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">يتم الحفظ تلقائياً في المتصفح</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">يتم الحفظ في قاعدة البيانات</p>
       </div>
 
       {submitStatus === 'success' && (

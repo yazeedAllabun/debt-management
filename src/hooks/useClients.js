@@ -1,61 +1,55 @@
-import { useState, useCallback } from 'react'
-
-const STORAGE_KEY = 'debt_clients'
-
-function loadClients() {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
-}
-
-function saveClients(clients) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients))
-}
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
 
 export function useClients() {
-  const [clients, setClients] = useState(() => loadClients())
-  const [loading] = useState(false)
-  const [error] = useState(null)
+  const [clients, setClients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]   = useState(null)
 
-  const addClient = useCallback((clientData) => {
-    const newClient = {
-      ...clientData,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-    setClients(prev => {
-      const updated = [newClient, ...prev]
-      saveClients(updated)
-      return updated
-    })
-    return newClient
+  const fetchClients = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) setError(error.message)
+    else setClients(data || [])
+    setLoading(false)
   }, [])
 
-  const updateClientStatus = useCallback((id, status) => {
-    setClients(prev => {
-      const updated = prev.map(c =>
-        c.id === id ? { ...c, status, updated_at: new Date().toISOString() } : c
-      )
-      saveClients(updated)
-      return updated
-    })
+  useEffect(() => { fetchClients() }, [fetchClients])
+
+  const addClient = useCallback(async (clientData) => {
+    const { data, error } = await supabase
+      .from('clients')
+      .insert([{ ...clientData, updated_at: new Date().toISOString() }])
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    setClients(prev => [data, ...prev])
+    return data
   }, [])
 
-  const deleteClient = useCallback((id) => {
-    setClients(prev => {
-      const updated = prev.filter(c => c.id !== id)
-      saveClients(updated)
-      return updated
-    })
+  const updateClientStatus = useCallback(async (id, updates) => {
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    setClients(prev => prev.map(c => c.id === id ? data : c))
   }, [])
 
-  const refetch = useCallback(() => {
-    setClients(loadClients())
+  const deleteClient = useCallback(async (id) => {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+    if (error) throw new Error(error.message)
+    setClients(prev => prev.filter(c => c.id !== id))
   }, [])
 
-  return { clients, loading, error, addClient, updateClientStatus, deleteClient, refetch }
+  return { clients, loading, error, addClient, updateClientStatus, deleteClient, refetch: fetchClients }
 }

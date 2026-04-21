@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
+import { useEmployees } from '../../hooks/useEmployees'
 import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
 
-/* ─── PIN helpers ─── */
-const PIN_KEY      = 'owner_pin'
-const EMPLOYEES_KEY = 'employees'
-const getPin   = ()  => { const v = localStorage.getItem(PIN_KEY); return v ? atob(v) : null }
-const savePin  = (p) => localStorage.setItem(PIN_KEY, btoa(p))
-const getEmps  = ()  => { try { return JSON.parse(localStorage.getItem(EMPLOYEES_KEY) || '[]') } catch { return [] } }
-const saveEmps = (e) => localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(e))
+/* ─── PIN helpers (localStorage) ─── */
+const PIN_KEY   = 'owner_pin'
+const getPin    = ()  => { const v = localStorage.getItem(PIN_KEY); return v ? atob(v) : null }
+const savePin   = (p) => localStorage.setItem(PIN_KEY, btoa(p))
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
@@ -26,7 +24,7 @@ const ALL_PERMISSIONS = [
 ]
 
 /* ─── Employee form ─── */
-function EmployeeForm({ onSave, onCancel }) {
+function EmployeeForm({ onSave, onCancel, saving }) {
   const [name, setName]   = useState('')
   const [phone, setPhone] = useState('')
   const [role, setRole]   = useState('موظف')
@@ -38,7 +36,7 @@ function EmployeeForm({ onSave, onCancel }) {
 
   const handleSave = () => {
     if (!name.trim()) return setErr('الاسم مطلوب')
-    onSave({ id: crypto.randomUUID(), name: name.trim(), phone: phone.trim(), role, permissions: perms, password: null, created_at: new Date().toISOString() })
+    onSave({ name: name.trim(), phone: phone.trim(), role, permissions: perms, password: null })
   }
 
   return (
@@ -59,24 +57,26 @@ function EmployeeForm({ onSave, onCancel }) {
         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">الصلاحيات</p>
         <div className="flex flex-wrap gap-2">
           {ALL_PERMISSIONS.map(p => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => togglePerm(p.key)}
+            <button key={p.key} type="button" onClick={() => togglePerm(p.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 perms.includes(p.key)
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400'
-              }`}
-            >
+              }`}>
               {p.label}
             </button>
           ))}
         </div>
       </div>
       <div className="flex gap-2">
-        <button onClick={handleSave} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">حفظ الموظف</button>
-        <button onClick={onCancel} className="px-5 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">إلغاء</button>
+        <button onClick={handleSave} disabled={saving}
+          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-xl transition-colors">
+          {saving ? 'جاري الحفظ...' : 'حفظ الموظف'}
+        </button>
+        <button onClick={onCancel}
+          className="px-5 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
+          إلغاء
+        </button>
       </div>
     </div>
   )
@@ -84,41 +84,45 @@ function EmployeeForm({ onSave, onCancel }) {
 
 /* ─── Main Component ─── */
 export function OwnerPage() {
-  const navigate    = useNavigate()
+  const navigate = useNavigate()
   const { isOwner, ownerLogin, ownerLogout } = useOwnerSession()
   const storedPin   = getPin()
   const isFirstTime = !storedPin
 
-  const [step, setStep]         = useState(() => {
+  const [step, setStep]             = useState(() => {
     if (isFirstTime) return 'setup'
     if (isOwner) return 'dashboard'
     return 'login'
   })
-  const [pin, setPin]           = useState('')
-  const [confirmPin, setConfirm] = useState('')
-  const [newPin, setNewPin]     = useState('')
+  const [pin, setPin]               = useState('')
+  const [confirmPin, setConfirm]    = useState('')
+  const [newPin, setNewPin]         = useState('')
   const [confirmNew, setConfirmNew] = useState('')
-  const [showPin, setShowPin]   = useState(false)
-  const [error, setError]       = useState('')
-  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'employees'
-  const [employees, setEmployees] = useState(getEmps)
-  const [showForm, setShowForm]  = useState(false)
+  const [showPin, setShowPin]       = useState(false)
+  const [error, setError]           = useState('')
+  const [activeTab, setActiveTab]   = useState('overview')
+  const [showForm, setShowForm]     = useState(false)
+  const [saving, setSaving]         = useState(false)
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
+  const { employees, loading: empsLoading, addEmployee, deleteEmployee } = useEmployees()
 
-  const addEmployee = (emp) => {
-    const updated = [emp, ...employees]
-    setEmployees(updated)
-    saveEmps(updated)
-    setShowForm(false)
+  const handleAddEmployee = async (empData) => {
+    setSaving(true)
+    try {
+      await addEmployee(empData)
+      setShowForm(false)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const deleteEmployee = (id) => {
+  const handleDeleteEmployee = async (id) => {
     if (!window.confirm('هل تريد حذف هذا الموظف؟')) return
-    const updated = employees.filter(e => e.id !== id)
-    setEmployees(updated)
-    saveEmps(updated)
+    try { await deleteEmployee(id) } catch (e) { setError(e.message) }
   }
 
   /* ── SETUP ── */
@@ -138,9 +142,13 @@ export function OwnerPage() {
             <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" />
             <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
           </div>
-          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" onKeyDown={e => { if(e.key==='Enter'){ if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); setStep('dashboard') }}} />
+          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور"
+            onKeyDown={e => { if(e.key==='Enter'){ if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }}} />
         </div>
-        <button onClick={() => { if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">تعيين كلمة المرور</button>
+        <button onClick={() => { if(pin.length<4)return setError('4 أرقام على الأقل'); if(pin!==confirmPin)return setError('كلمتا المرور غير متطابقتين'); savePin(pin); setError(''); ownerLogin(); setStep('dashboard') }}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+          تعيين كلمة المرور
+        </button>
       </div>
     </div>
   )
@@ -158,10 +166,14 @@ export function OwnerPage() {
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="relative text-right">
-          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" onKeyDown={e => { if(e.key==='Enter'){ if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}} />
+          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور"
+            onKeyDown={e => { if(e.key==='Enter'){ if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}} />
           <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
         </div>
-        <button onClick={() => { if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">دخول</button>
+        <button onClick={() => { if(pin===getPin()){setError('');ownerLogin();setStep('dashboard')}else{setError('كلمة المرور غير صحيحة')} }}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+          دخول
+        </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">رجوع للرئيسية</button>
       </div>
     </div>
@@ -179,8 +191,14 @@ export function OwnerPage() {
           <input type="password" value={confirmNew} onChange={e => setConfirmNew(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور الجديدة" />
         </div>
         <div className="flex gap-3">
-          <button onClick={() => { if(pin!==getPin())return setError('كلمة المرور الحالية غير صحيحة'); if(newPin.length<4)return setError('4 أرقام على الأقل'); if(newPin!==confirmNew)return setError('كلمتا المرور غير متطابقتين'); savePin(newPin); setError(''); setPin(''); setNewPin(''); setConfirmNew(''); setStep('dashboard') }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">حفظ</button>
-          <button onClick={() => { setStep('dashboard'); setError('') }} className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">إلغاء</button>
+          <button onClick={() => { if(pin!==getPin())return setError('كلمة المرور الحالية غير صحيحة'); if(newPin.length<4)return setError('4 أرقام على الأقل'); if(newPin!==confirmNew)return setError('كلمتا المرور غير متطابقتين'); savePin(newPin); setError(''); setPin(''); setNewPin(''); setConfirmNew(''); setStep('dashboard') }}
+            className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+            حفظ
+          </button>
+          <button onClick={() => { setStep('dashboard'); setError('') }}
+            className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">
+            إلغاء
+          </button>
         </div>
       </div>
     </div>
@@ -192,7 +210,7 @@ export function OwnerPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="رجوع للرئيسية">
+          <button onClick={() => navigate('/')} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
@@ -204,10 +222,12 @@ export function OwnerPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setStep('change'); setPin(''); setError('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
+          <button onClick={() => { setStep('change'); setPin(''); setError('') }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
             <KeyRound size={14} /> تغيير كلمة المرور
           </button>
-          <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
+          <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
             <LogOut size={14} /> خروج
           </button>
         </div>
@@ -237,10 +257,10 @@ export function OwnerPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: 'إجمالي الديون',    value: formatCurrency(stats.totalDebt) },
-              { label: 'إجمالي السداد',    value: formatCurrency(stats.totalPaid) },
-              { label: 'تم السداد',        value: formatNumber(stats.paymentDone) + ' عميل' },
-              { label: 'الحالات المعلقة',  value: formatNumber(stats.pendingCases) + ' حالة' },
+              { label: 'إجمالي الديون',   value: formatCurrency(stats.totalDebt) },
+              { label: 'إجمالي السداد',   value: formatCurrency(stats.totalPaid) },
+              { label: 'تم السداد',       value: formatNumber(stats.paymentDone) + ' عميل' },
+              { label: 'الحالات المعلقة', value: formatNumber(stats.pendingCases) + ' حالة' },
             ].map(item => (
               <div key={item.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
                 <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
@@ -260,15 +280,20 @@ export function OwnerPage() {
               <p className="text-xs text-gray-400 mt-0.5">{employees.length} موظف مسجّل</p>
             </div>
             {!showForm && (
-              <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
+              <button onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
                 <UserPlus size={15} /> إضافة موظف
               </button>
             )}
           </div>
 
-          {showForm && <EmployeeForm onSave={addEmployee} onCancel={() => setShowForm(false)} />}
+          {showForm && <EmployeeForm onSave={handleAddEmployee} onCancel={() => setShowForm(false)} saving={saving} />}
 
-          {employees.length === 0 && !showForm ? (
+          {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+
+          {empsLoading ? (
+            <div className="text-center py-8 text-gray-400">جاري التحميل...</div>
+          ) : employees.length === 0 && !showForm ? (
             <div className="text-center py-12 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
               لا يوجد موظفون مسجّلون بعد
             </div>
@@ -280,6 +305,10 @@ export function OwnerPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-gray-800 dark:text-gray-100">{emp.name}</p>
                       <span className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{emp.role}</span>
+                      {emp.password
+                        ? <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">كلمة مرور مُعيَّنة</span>
+                        : <span className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">لم يُعيَّن كلمة مرور</span>
+                      }
                     </div>
                     {emp.phone && <p className="text-xs text-gray-400 mt-0.5">{emp.phone}</p>}
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -288,7 +317,8 @@ export function OwnerPage() {
                       ))}
                     </div>
                   </div>
-                  <button onClick={() => deleteEmployee(emp.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                  <button onClick={() => handleDeleteEmployee(emp.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                     <Trash2 size={15} />
                   </button>
                 </div>
