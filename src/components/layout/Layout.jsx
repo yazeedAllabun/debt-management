@@ -3,12 +3,23 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { Calculator } from 'lucide-react'
+import { useOwnerSession } from '../../context/OwnerSessionContext'
+import { useEmployeeSession } from '../../context/EmployeeSessionContext'
+import { EmployeeLogin } from '../auth/EmployeeLogin'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const isCalculatorPage = location.pathname === '/calculator'
+  const { isOwner } = useOwnerSession()
+  const { currentEmployee } = useEmployeeSession()
+
+  // بوابة المصادقة: اعرض شاشة تسجيل الدخول إن لم يكن هناك جلسة نشطة
+  // استثناء: مسار /owner دائماً متاح لتسجيل دخول المالك
+  if (!isOwner && !currentEmployee && location.pathname !== '/owner') {
+    return <EmployeeLogin />
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">

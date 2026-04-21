@@ -4,7 +4,7 @@ import { useClients } from '../../hooks/useClients'
 import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
-import { Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
 
 /* ─── PIN helpers ─── */
 const PIN_KEY      = 'owner_pin'
@@ -38,7 +38,7 @@ function EmployeeForm({ onSave, onCancel }) {
 
   const handleSave = () => {
     if (!name.trim()) return setErr('الاسم مطلوب')
-    onSave({ id: crypto.randomUUID(), name: name.trim(), phone: phone.trim(), role, permissions: perms, created_at: new Date().toISOString() })
+    onSave({ id: crypto.randomUUID(), name: name.trim(), phone: phone.trim(), role, permissions: perms, password: null, created_at: new Date().toISOString() })
   }
 
   return (
@@ -208,7 +208,7 @@ export function OwnerPage() {
             <KeyRound size={14} /> تغيير كلمة المرور
           </button>
           <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
-            <Lock size={14} /> قفل
+            <LogOut size={14} /> خروج
           </button>
         </div>
       </div>

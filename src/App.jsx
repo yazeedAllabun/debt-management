@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { OwnerSessionProvider } from './context/OwnerSessionContext'
+import { EmployeeSessionProvider } from './context/EmployeeSessionContext'
 import { Layout } from './components/layout/Layout'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { ClientsPage } from './components/clients/ClientsPage'
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <OwnerSessionProvider>
+        <EmployeeSessionProvider>
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
@@ -27,6 +29,7 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </EmployeeSessionProvider>
       </OwnerSessionProvider>
     </ThemeProvider>
   )
