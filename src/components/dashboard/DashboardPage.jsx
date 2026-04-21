@@ -20,22 +20,20 @@ export function DashboardPage() {
   )
 
   return (
-    <div
-      className="space-y-6 relative min-h-screen"
-      style={{
-        backgroundImage: `url(${logoImg})`,
-        backgroundSize: '45%',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <>
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ backgroundColor: theme === 'dark' ? 'rgba(17,24,39,0.88)' : 'rgba(255,255,255,0.82)' }}
         aria-hidden="true"
+        className="fixed inset-0 pointer-events-none select-none"
+        style={{
+          backgroundImage: `url(${logoImg})`,
+          backgroundSize: '50%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: theme === 'dark' ? 0.07 : 0.15,
+          zIndex: 1,
+        }}
       />
-      <div className="relative z-10 space-y-6">
+      <div className="relative space-y-6" style={{ zIndex: 2 }}>
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">لوحة التحكم</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">نظرة عامة على أداء الشركة</p>
@@ -48,6 +46,6 @@ export function DashboardPage() {
           <RecentActivity clients={clients} />
         </div>
       </div>
-    </div>
+    </>
   )
 }
