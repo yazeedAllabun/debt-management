@@ -45,16 +45,19 @@ export function EmployeeLogin() {
       .eq('id', emp.id)
       .select()
       .single()
-    setSubmitting(false)
     if (error) return setError('حدث خطأ، حاول مجدداً')
-    employeeLogin(data)
+    setSubmitting(true)
+    await employeeLogin(data)
+    setSubmitting(false)
   }
 
   const handleLogin = async () => {
     if (!password) return setError('أدخل كلمة المرور')
     if (atob(emp.password) !== password) return setError('كلمة المرور غير صحيحة')
     setError('')
-    employeeLogin(emp)
+    setSubmitting(true)
+    await employeeLogin(emp)
+    setSubmitting(false)
   }
 
   const goBack = () => { setStep('select'); setError(''); setPass(''); setConf('') }

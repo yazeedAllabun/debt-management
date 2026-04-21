@@ -6,6 +6,8 @@ import { calcProfit, formatCurrency } from '../../utils/formatters'
 import { MultiSelect } from '../ui/MultiSelect'
 import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useOwnerSession } from '../../context/OwnerSessionContext'
+import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 
 const BANKS = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
@@ -38,6 +40,8 @@ const inputCls =
 export function AddClientPage() {
   const { addClient } = useClients()
   const navigate = useNavigate()
+  const { isOwner } = useOwnerSession()
+  const { currentEmployee } = useEmployeeSession()
   const [submitStatus, setSubmitStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [selectedBanks, setSelectedBanks] = useState([])
@@ -45,9 +49,10 @@ export function AddClientPage() {
   const [employees, setEmployees] = useState([])
 
   useEffect(() => {
+    if (!isOwner) return
     supabase.from('employees').select('id, name, role').order('name')
       .then(({ data }) => setEmployees(data || []))
-  }, [])
+  }, [isOwner])
 
   const {
     register,
@@ -74,7 +79,7 @@ export function AddClientPage() {
       phone:              data.phone?.trim() || null,
       bank_names:         selectedBanks,
       financing_companies: selectedFinancing,
-      added_by:           data.added_by || null,
+      added_by:           isOwner ? (data.added_by || null) : (currentEmployee?.name || null),
       debt_amount:        parseFloat(data.debt_amount),
       commission_pct:     parseFloat(data.commission_pct),
       payment_status:     data.payment_status,
@@ -154,8 +159,8 @@ export function AddClientPage() {
           </Field>
         </div>
 
-        {/* الموظف المسؤول */}
-        {employees.length > 0 && (
+        {/* الموظف المسؤول — للمالك فقط */}
+        {isOwner && employees.length > 0 && (
           <Field label="أضيف بواسطة">
             <select {...register('added_by')} className={inputCls}>
               <option value="">— اختر الموظف —</option>
