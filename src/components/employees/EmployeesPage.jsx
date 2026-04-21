@@ -1,12 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { useClients } from '../../hooks/useClients'
+import { useEmployees } from '../../hooks/useEmployees'
 import { formatCurrency, formatNumber, calcProfit } from '../../utils/formatters'
 import { Lock, UsersRound, TrendingUp, UserCheck, Banknote, ArrowLeft } from 'lucide-react'
-
-const getEmps = () => {
-  try { return JSON.parse(localStorage.getItem('employees') || '[]') } catch { return [] }
-}
 
 const ROLE_COLOR = {
   موظف:   'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
@@ -19,7 +16,7 @@ export function EmployeesPage() {
   const navigate = useNavigate()
   const { isOwner } = useOwnerSession()
   const { clients } = useClients()
-  const employees = getEmps()
+  const { employees } = useEmployees()
 
   /* حماية الصفحة — للمالك فقط */
   if (!isOwner) {
