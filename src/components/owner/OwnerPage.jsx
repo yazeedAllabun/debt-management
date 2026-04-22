@@ -161,7 +161,7 @@ export function OwnerPage() {
         <button onClick={async () => {
           if (pin.length < 4) return setError('4 أحرف على الأقل')
           if (pin !== confirmPin) return setError('كلمتا المرور غير متطابقتين')
-          await savePin(pin); setStoredPin(pin); setError(''); ownerLogin(); setStep('dashboard')
+          await savePin(pin); setStoredPin(pin); setError(''); await ownerLogin(); setStep('dashboard')
         }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           تعيين كلمة المرور
         </button>
@@ -183,12 +183,12 @@ export function OwnerPage() {
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="relative text-right">
           <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور"
-            onKeyDown={e => { if (e.key === 'Enter') { if (pin === storedPin) { setError(''); ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}} />
+            onKeyDown={async e => { if (e.key === 'Enter') { if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}} />
           <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
-        <button onClick={() => { if (pin === storedPin) { setError(''); ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}
+        <button onClick={async () => { if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}
           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           دخول
         </button>
