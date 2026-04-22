@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, X } from 'lucide-react'
 
-export function MultiSelect({ label, options, selected, onChange, placeholder = 'اختر...' }) {
+export function MultiSelect({ options, selected, onChange, placeholder = 'اختر...' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 

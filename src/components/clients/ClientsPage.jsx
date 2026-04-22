@@ -13,8 +13,8 @@ export function ClientsPage() {
     const matchSearch =
       !search ||
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.national_id.includes(search)
-    const matchStatus = statusFilter === 'all' || c.status === statusFilter
+      (c.phone || '').includes(search)
+    const matchStatus = statusFilter === 'all' || c.payment_status === statusFilter
     return matchSearch && matchStatus
   })
 
