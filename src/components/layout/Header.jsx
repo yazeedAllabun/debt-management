@@ -1,7 +1,7 @@
 import { Sun, Moon, Menu, LogOut } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
-import logoImg from '../../assets/logo.jpg'
+import logoImg from '../../assets/logo-dark.png'
 
 export function Header({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme()
@@ -19,7 +19,7 @@ export function Header({ onMenuClick }) {
           <Menu size={20} />
         </button>
 
-        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden shrink-0 bg-white">
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden shrink-0">
           <img src={logoImg} alt="شعار مكتب راكان" className="w-full h-full object-contain" />
         </div>
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, UserCircle, KeyRound } from 'lucide-react'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import { supabase } from '../../lib/supabase'
-import logoImg from '../../assets/logo.jpg'
+import logoImg from '../../assets/logo-dark.png'
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
