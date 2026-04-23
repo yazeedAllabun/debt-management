@@ -80,7 +80,7 @@ export function EmployeeLogin() {
                   <UserCircle size={26} className="text-blue-600 dark:text-blue-400" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">تسجيل الدخول</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">مكتب راكان للعقارات</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">راكان للتمويل</p>
               </div>
 
               {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}

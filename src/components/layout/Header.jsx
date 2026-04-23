@@ -25,7 +25,7 @@ export function Header({ onMenuClick }) {
 
         <div>
           <h1 className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-100 leading-tight">
-            مكتب راكان للعقارات
+            راكان للتمويل
           </h1>
           <p className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">لوحة التحكم</p>
         </div>
