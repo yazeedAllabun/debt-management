@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>المحتسب الشامل</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* LIGHT MODE (default) */
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --border: #e2e8f0;
+  --border-bright: #cbd5e1;
+  --accent: #4f46e5;
+  --accent2: #6366f1;
+  --accent-glow: rgba(79,70,229,0.12);
+  --green: #16a34a;
+  --red: #dc2626;
+  --yellow: #d97706;
+  --text: #0f172a;
+  --text2: #64748b;
+  --text3: #94a3b8;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
+}
+/* DARK MODE — يُفعَّل من زر التبديل أو تلقائياً من إعداد الجهاز */
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2128;
+  --border: #30363d;
+  --border-bright: #484f58;
+  --accent: #4f80ff;
+  --accent2: #818cf8;
+  --accent-glow: rgba(79,128,255,0.18);
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #484f58;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+/* fallback: إذا كان الجهاز في الوضع الداكن ولم يختر المستخدم وضعاً بعد */
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --border-bright: #484f58;
+    --accent: #4f80ff;
+    --accent2: #818cf8;
+    --accent-glow: rgba(79,128,255,0.18);
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #484f58;
+    --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;letter-spacing:0!important}
+body,input,select,button,label{font-family:'IBM Plex Sans Arabic',sans-serif;}
+html{background:var(--bg);color:var(--text)}
+body{background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;transition:background .3s,color .3s}
+
+/* Header */
+.header{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:64px;position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:700;color:#fff;
+  box-shadow:0 0 16px var(--accent-glow);
+}
+.brand-name{font-size:17px;font-weight:700}
+.brand-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.theme-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:50%;width:38px;height:38px;
+  cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.theme-btn:hover{border-color:var(--accent);box-shadow:0 0 12px var(--accent-glow)}
+
+/* Tabs */
+.tabs-bar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;padding:0 24px;gap:4px;
+}
+.tab-btn{
+  padding:14px 20px;font-size:14px;font-weight:600;
+  color:var(--text2);background:transparent;
+  border:none;border-bottom:3px solid transparent;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+  font-family:inherit;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Main layout */
+.main{max-width:1100px;margin:0 auto;padding:28px 20px}
+
+/* Cards */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px;
+  transition:border-color .2s;
+}
+.card:hover{border-color:var(--border-bright)}
+.card-title{
+  font-size:12px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;margin-bottom:14px;
+}
+
+/* Grid layouts */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:768px){.grid-3,.grid-2{grid-template-columns:1fr}}
+
+/* Inputs */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+label{font-size:13px;color:var(--text2);display:block;margin-bottom:6px;font-weight:500}
+input[type=text],input[type=number],input[type=tel],select{
+  width:100%;padding:10px 14px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-family:inherit;
+  font-size:14px;transition:all .2s;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+input.err{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(239,68,68,.12)!important}
+select{cursor:pointer}
+.hint-text{font-size:11.5px;color:var(--text3);margin-top:5px;line-height:1.5}
+.err-msg{font-size:12px;color:var(--red);margin-top:5px;display:none}
+
+/* Checkboxes */
+.check-row{display:flex;gap:20px;margin-top:10px}
+.check-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)}
+.check-label input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+
+/* Commitments section */
+.commits-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:14px}
+.commit-card{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:16px;transition:all .2s;
+}
+.commit-card:hover{border-color:var(--border-bright)}
+.commit-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.commit-label{font-size:13px;font-weight:600;color:var(--text2)}
+.impact-badge{
+  font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;
+  display:none;
+}
+.impact-badge.inf{background:rgba(239,68,68,.15);color:var(--red);display:inline-block}
+.impact-badge.ok{background:rgba(34,197,94,.15);color:var(--green);display:inline-block}
+.commit-row{display:flex;gap:8px}
+.commit-row input{flex:1;min-width:0}
+.commit-row select{flex:1.2;min-width:0}
+.warn-msg{font-size:11.5px;color:var(--red);margin-top:6px;display:none}
+.commit-hint{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5}
+
+/* Summary card */
+.summary-card{
+  background:linear-gradient(135deg,var(--surface2),var(--surface));
+  border:1px solid var(--border-bright);
+  border-radius:var(--radius-sm);padding:16px;
+}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.sum-row:last-of-type{border-bottom:none}
+.sum-key{font-size:13px;color:var(--text2)}
+.sum-val{font-size:15px;font-weight:700;color:var(--accent)}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:12px 28px;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:inherit;
+  box-shadow:0 4px 16px var(--accent-glow);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(79,128,255,.35)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{
+  background:transparent;color:var(--text2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:11px 20px;font-size:14px;cursor:pointer;
+  transition:all .2s;font-family:inherit;
+}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-ghost.sm{padding:6px 12px;font-size:12px}
+.commit-actions{display:flex;gap:8px;margin-top:12px}
+
+/* Explanation */
+.explain-box{
+  background:linear-gradient(135deg,rgba(79,128,255,.08),rgba(56,189,248,.06));
+  border:1px solid rgba(79,128,255,.25);
+  border-radius:var(--radius-sm);padding:14px 16px;
+  margin-top:16px;font-size:14px;color:var(--text2);line-height:1.7;
+  display:none;
+}
+.explain-box.show{display:block}
+
+/* Options card */
+.options-card{
+  background:var(--surface);border:1px solid var(--accent);
+  border-radius:var(--radius);padding:20px;margin-top:16px;
+  display:none;box-shadow:0 0 24px var(--accent-glow);
+}
+.options-card.show{display:block}
+.deduct-checks{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 16px}
+.deduct-lbl{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:14px;font-weight:500}
+.deduct-lbl input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+
+/* Results table */
+.result-section{margin-top:24px;display:none}
+.result-section.show{display:block}
+.result-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;flex-wrap:wrap;gap:10px;
+}
+.result-title{font-size:17px;font-weight:700}
+.result-subtitle{font-size:12px;color:var(--text3);margin-top:2px}
+.result-actions{display:flex;gap:8px}
+.result-table{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.rt-row{
+  display:flex;align-items:stretch;border-bottom:1px solid var(--border);
+}
+.rt-row:last-child{border-bottom:none}
+.rt-key{
+  flex:1;padding:14px 18px;font-size:13px;color:var(--text2);
+  background:var(--surface2);font-weight:500;border-left:1px solid var(--border);
+  display:flex;align-items:center;
+}
+.rt-val{
+  flex:1.2;padding:14px 18px;font-size:15px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;
+}
+.rt-val.highlight{color:var(--green);font-size:18px}
+.rt-val.accent{color:var(--accent)}
+
+/* Section spacing */
+.section{margin-bottom:20px}
+.section-title{
+  font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Modal */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:none;align-items:center;justify-content:center;z-index:999;
+  backdrop-filter:blur(4px);
+}
+.modal.show{display:flex}
+.modal-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px;max-width:360px;width:90%;
+  box-shadow:var(--shadow);text-align:center;
+}
+.modal-icon{font-size:36px;margin-bottom:12px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.modal-msg{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+
+/* Salary input with label */
+.salary-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.pct-chip{
+  display:inline-block;font-size:11px;padding:2px 8px;
+  background:var(--accent-glow);color:var(--accent);
+  border-radius:20px;margin-right:4px;font-weight:600;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px}
+
+/* Section divider */
+hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* Top area with customer info */
+.top-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:640px){.top-grid{grid-template-columns:1fr}}
+
+/* Fade in */
+.calc-panel{animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Footer */
+footer{text-align:center;padding:20px;font-size:12px;color:var(--text3);border-top:1px solid var(--border);margin-top:40px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <div class="logo">م</div>
+    <div>
+      <div class="brand-name">المحتسب الشامل</div>
+      <div class="brand-sub">حسبة مبدئية للتمويل</div>
+    </div>
+  </div>
+  <button class="theme-btn" id="themeBtn" title="تبديل الوضع">☀️</button>
+</header>
+
+<nav class="tabs-bar">
+  <button class="tab-btn active" id="tab1">التمويل الشخصي</button>
+  <button class="tab-btn" id="tab2">شركات التمويل</button>
+</nav>
+
+<main class="main">
+
+<!-- ===== PERSONAL PANEL ===== -->
+<div class="calc-panel" id="panelPersonal">
+
+  <div class="top-grid">
+    <!-- Customer info -->
+    <div class="card">
+      <div class="card-title">معلومات العميل</div>
+      <div class="field"><label>اسم العميل</label><input id="p_name" type="text" placeholder="أدخل الاسم"/><div class="err-msg" id="p_nameErr"></div></div>
+      <div class="field"><label>رقم الجوال</label><input id="p_mobile" type="tel" placeholder="05xxxxxxxx" inputmode="numeric"/></div>
+      <div class="field"><label>المبلغ المراد سداده</label><input id="p_payoff" type="number" min="0" step="0.01" placeholder="اختياري"/></div>
+    </div>
+    <!-- Params -->
+    <div class="card">
+      <div class="card-title">معطيات التمويل</div>
+      <div class="field">
+        <label>الراتب <span style="font-size:11px;color:var(--text3)">(مع البدلات الثابتة)</span></label>
+        <input id="p_salary" type="number" placeholder="مثال: 14000" inputmode="decimal"/>
+        <div class="err-msg" id="p_salaryErr"></div>
+        <div class="salary-hint">الفئة: <span id="p_bandLabel" class="pct-chip">—</span></div>
+      </div>
+      <div class="check-row">
+        <label class="check-label"><input id="p_emp" type="checkbox"/> موظف</label>
+        <label class="check-label"><input id="p_ret" type="checkbox"/> متقاعد</label>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>المدة بالأشهر</label>
+        <input id="p_months" type="number" min="6" max="60" placeholder="مثال: 48" inputmode="numeric"/>
+        <div class="err-msg" id="p_monthsErr"></div>
+      </div>
+      <div class="field">
+        <label>نسبة الفائدة السنوية (%)</label>
+        <input id="p_rate" type="number" min="0" step="0.01" placeholder="مثال: 9"/>
+        <div class="err-msg" id="p_rateErr"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commitments -->
+  <div class="card section">
+    <div class="card-title">الالتزامات</div>
+    <div class="commits-wrap" id="p_commitsWrap">
+      <!-- commit cards injected by JS -->
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+      <div class="summary-card" style="flex:1;min-width:220px">
+        <div class="sum-row"><span class="sum-key">المجموع</span><span class="sum-val" id="p_sumAmt">0.00</span></div>
+        <div class="sum-row" style="border:none"><span class="sum-key">نسبة الاستقطاع</span><span class="sum-val" id="p_sumPct">0%</span></div>
+      </div>
+      <div class="commit-actions">
+        <button class="btn-ghost sm" id="p_addBtn">+ إضافة التزام</button>
+        <button class="btn-ghost sm" id="p_removeBtn" style="display:none">− حذف</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" id="p_calcBtn">احسب التمويل</button>
+    <button class="btn-ghost" id="p_clearBtn">مسح</button>
+  </div>
+
+  <div class="explain-box" id="p_explain"></div>
+
+  <!-- Options (shown after calc for salary>=25000) -->
+  <div class="options-card" id="p_optionsCard">
+    <div class="card-title">خيارات متقدمة</div>
+    <div class="field">
+      <label><input type="checkbox" id="p_use75" style="accent-color:var(--accent);margin-left:6px;width:16px;height:16px"> احتساب على 75%</label>
+    </div>
+    <hr class="divider" style="margin:12px 0"/>
+    <div class="field">
+      <label>نوع الحساب</label>
+      <select id="p_finOpt">
+        <option value="full">كامل المبلغ</option>
+        <option value="customAmount">مبلغ تمويل محدد</option>
+        <option value="customInstallment">قسط شهري محدد</option>
+      </select>
+    </div>
+    <div id="p_customWrap" style="display:none;margin-top:10px">
+      <input id="p_customVal" type="number" min="0" step="0.01" placeholder="أدخل القيمة"/>
+      <div class="err-msg" id="p_customErr" style="display:none"></div>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-primary" id="p_recalcBtn" style="font-size:13px;padding:10px 20px">إعادة الحساب</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="result-section" id="p_results">
+    <div class="result-header">
+      <div>
+        <div class="result-title">نتيجة التمويل الشخصي</div>
+        <div class="result-subtitle">حسبة مبدئية — يرجى التحقق مع الجهة التمويلية</div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-ghost sm" id="p_shareBtn">📸 مشاركة</button>
+        <button class="btn-ghost sm" id="p_saveBtn">💾 حفظ</button>
+      </div>
+    </div>
+    <div class="result-table" id="p_table"></div>
+  </div>
+
+</div>
+
+<!-- ===== FINC PLAN PANEL ===== -->
+<div class="calc-panel" id="panelFincPln" style="display:none">
+
+  <div class="top-grid">
+    <div class="card">
+      <div class="card-title">معلومات العميل</div>
+      <div class="field"><label>اسم العميل</label><input id="f_name" type="text" placeholder="أدخل الاسم"/><div class="err-msg" id="f_nameErr"></div></div>
+      <div class="field"><label>رقم الجوال</label><input id="f_mobile" type="tel" placeholder="05xxxxxxxx" inputmode="numeric"/></div>
+      <div class="field"><label>المبلغ المراد سداده</label><input id="f_payoff" type="number" min="0" step="0.01" placeholder="اختياري"/></div>
+    </div>
+    <div class="card">
+      <div class="card-title">معطيات التمويل</div>
+      <div class="field">
+        <label>الراتب</label>
+        <input id="f_salary" type="number" placeholder="مثال: 14000" inputmode="decimal"/>
+        <div class="err-msg" id="f_salaryErr"></div>
+        <div class="salary-hint">الفئة: <span id="f_bandLabel" class="pct-chip">—</span></div>
+      </div>
+      <div class="check-row">
+        <label class="check-label"><input id="f_emp" type="checkbox"/> موظف</label>
+        <label class="check-label"><input id="f_ret" type="checkbox"/> متقاعد</label>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>المدة بالأشهر</label>
+        <input id="f_months" type="number" min="6" max="60" placeholder="مثال: 48" inputmode="numeric"/>
+        <div class="err-msg" id="f_monthsErr"></div>
+      </div>
+      <div class="field">
+        <label>نسبة الفائدة السنوية (%)</label>
+        <input id="f_rate" type="number" min="0" step="0.01" placeholder="مثال: 9"/>
+        <div class="err-msg" id="f_rateErr"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section">
+    <div class="card-title">الالتزامات</div>
+    <div class="commits-wrap" id="f_commitsWrap"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+      <div class="summary-card" style="flex:1;min-width:220px">
+        <div class="sum-row"><span class="sum-key">المجموع</span><span class="sum-val" id="f_sumAmt">0.00</span></div>
+        <div class="sum-row" style="border:none"><span class="sum-key">نسبة الاستقطاع</span><span class="sum-val" id="f_sumPct">0%</span></div>
+      </div>
+      <div class="commit-actions">
+        <button class="btn-ghost sm" id="f_addBtn">+ إضافة التزام</button>
+        <button class="btn-ghost sm" id="f_removeBtn" style="display:none">− حذف</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" id="f_calcBtn">احسب التمويل</button>
+    <button class="btn-ghost" id="f_clearBtn">مسح</button>
+  </div>
+
+  <div class="explain-box" id="f_explain"></div>
+
+  <div class="options-card" id="f_optionsCard">
+    <div class="card-title">خيارات متقدمة</div>
+    <div class="field">
+      <label style="font-weight:600;margin-bottom:10px;display:block">نسبة الاستقطاع</label>
+      <div class="deduct-checks">
+        <label class="deduct-lbl"><input type="checkbox" class="f_deductCb" value="70"/> 70%</label>
+        <label class="deduct-lbl"><input type="checkbox" class="f_deductCb" value="75"/> 75%</label>
+        <label class="deduct-lbl"><input type="checkbox" class="f_deductCb" value="80"/> 80%</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>نوع الحساب</label>
+      <select id="f_finOpt">
+        <option value="full">كامل المبلغ</option>
+        <option value="customAmount">مبلغ تمويل محدد</option>
+        <option value="customInstallment">قسط شهري محدد</option>
+      </select>
+    </div>
+    <div id="f_customWrap" style="display:none;margin-top:10px">
+      <input id="f_customVal" type="number" min="0" step="0.01" placeholder="أدخل القيمة"/>
+      <div class="err-msg" id="f_customErr" style="display:none"></div>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-primary" id="f_recalcBtn" style="font-size:13px;padding:10px 20px">إعادة الحساب</button>
+    </div>
+  </div>
+
+  <div class="result-section" id="f_results">
+    <div class="result-header">
+      <div>
+        <div class="result-title">نتيجة شركات التمويل</div>
+        <div class="result-subtitle">حسبة مبدئية — يرجى التحقق مع الجهة التمويلية</div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-ghost sm" id="f_shareBtn">📸 مشاركة</button>
+        <button class="btn-ghost sm" id="f_saveBtn">💾 حفظ</button>
+      </div>
+    </div>
+    <div class="result-table" id="f_table"></div>
+  </div>
+
+</div>
+
+</main>
+
+<!-- Modals -->
+<div class="modal" id="eligModal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">العميل لا يستحق</div>
+    <div class="modal-msg">صافي التمويل أقل من 5,000 ريال بسبب الالتزامات الحالية.</div>
+    <button class="btn-ghost" onclick="document.getElementById('eligModal').classList.remove('show')">حسناً</button>
+  </div>
+</div>
+<div class="modal" id="easyModal">
+  <div class="modal-box">
+    <div class="modal-icon">📣</div>
+    <div class="modal-title">تنبيه — تمويل ميسر</div>
+    <div class="modal-msg">يرجى التحقق من سياسة جهة التمويل في حال عدم وجود تمويل شخصي.</div>
+    <button class="btn-ghost" onclick="document.getElementById('easyModal').classList.remove('show')">حسناً</button>
+  </div>
+</div>
+
+<footer>جميع الحقوق محفوظة © 2026 — المحتسب الشامل للتمويل الشخصي</footer>
+
+<script>
+// ============================================================
+// THEME — يحترم وضع الجهاز (system dark/light) ويتذكر اختيار المستخدم
+// ============================================================
+const themeBtn = document.getElementById('themeBtn');
+let isDark = false;
+
+function applyTheme(d){
+  // light = لا attribute أو data-theme="light" | dark = data-theme="dark"
+  document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+  document.body.setAttribute('data-theme', d ? 'dark' : 'light');
+  themeBtn.textContent = d ? '🌙' : '☀️';
+  isDark = d;
+  try{ localStorage.setItem('muhtasib_theme', d ? 'dark' : 'light'); }catch(e){}
+}
+
+// تحديد الوضع الأولي: أولاً من localStorage، ثم من إعداد الجهاز
+(function(){
+  let saved = null;
+  try{ saved = localStorage.getItem('muhtasib_theme'); }catch(e){}
+  if(saved === 'dark') applyTheme(true);
+  else if(saved === 'light') applyTheme(false);
+  else {
+    // لا يوجد تفضيل محفوظ → اتبع إعداد الجهاز
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark);
+  }
+})();
+
+// مراقبة تغيير إعداد الجهاز لو لم يختر المستخدم يدوياً
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  let saved = null;
+  try{ saved = localStorage.getItem('muhtasib_theme'); }catch(er){}
+  // نطبق فقط إذا لم يكن المستخدم قد اختار يدوياً في هذه الجلسة
+  if(!saved) applyTheme(e.matches);
+});
+
+themeBtn.addEventListener('click', () => applyTheme(!isDark));
+
+// ============================================================
+// TABS
+// ============================================================
+document.getElementById('tab1').addEventListener('click',()=>{
+  document.getElementById('tab1').classList.add('active');
+  document.getElementById('tab2').classList.remove('active');
+  document.getElementById('panelPersonal').style.display='';
+  document.getElementById('panelFincPln').style.display='none';
+});
+document.getElementById('tab2').addEventListener('click',()=>{
+  document.getElementById('tab2').classList.add('active');
+  document.getElementById('tab1').classList.remove('active');
+  document.getElementById('panelPersonal').style.display='none';
+  document.getElementById('panelFincPln').style.display='';
+});
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmt(v,d=2){return (+v).toFixed(d);}
+function band(s){return s>=25000?'high':s>=15000?'mid':'low';}
+function bandLabel(s){return s>=25000?'عالي (25k+)':s>=15000?'متوسط (15k+)':'منخفض (<15k)';}
+function showEl(el){if(el)el.style.display='';}
+function hideEl(el){if(el)el.style.display='none';}
+function showModal(id){document.getElementById(id).classList.add('show');}
+
+// ============================================================
+// COMMIT CARD BUILDER
+// ============================================================
+function buildCommitCard(prefix, idx, opts, hintText){
+  const id = `${prefix}_c${idx}`;
+  const tid = `${prefix}_t${idx}`;
+  const wid = `${prefix}_w${idx}`;
+  const iid = `${prefix}_i${idx}`;
+  const pid = `${prefix}_p${idx}`;
+  const div = document.createElement('div');
+  div.className='commit-card'; div.id=`${prefix}_card${idx}`;
+  div.innerHTML=`
+    <div class="commit-head">
+      <span class="commit-label">الالتزام ${['الأول','الثاني','الثالث'][idx-1]}</span>
+      <span class="impact-badge" id="${iid}"></span>
+    </div>
+    <div class="commit-row">
+      <input id="${id}" type="number" min="0" step="0.01" placeholder="المبلغ" value="0" inputmode="decimal"/>
+      <select id="${tid}"></select>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-top:5px">
+      نسبة: <span id="${pid}">0%</span>
+    </div>
+    <div class="warn-msg" id="${wid}"></div>
+    <div class="commit-hint">${hintText}</div>`;
+  const sel = div.querySelector(`#${tid}`);
+  opts.forEach(o=>{const op=document.createElement('option');op.value=op.textContent=o;sel.appendChild(op);});
+  return div;
+}
+
+// ============================================================
+// ============================================================
+// PERSONAL CALCULATOR
+// ============================================================
+// ============================================================
+(function(){
+  const PREFIX='p';
+  const OPTS_ALL = ["لا يوجد","تمويل شخصي","تمويل استهلاكي","عقاري مدعوم","عقاري غير مدعوم"];
+  const HINT = 'الاستهلاكي = مجموع الالتزامات غير الشخصي والعقاري (بطاقات، سيارة، شركات تمويل، بنك تنمية)';
+
+  const salaryEl=document.getElementById('p_salary');
+  const empEl=document.getElementById('p_emp');
+  const retEl=document.getElementById('p_ret');
+  const monthsEl=document.getElementById('p_months');
+  const rateEl=document.getElementById('p_rate');
+  const wrap=document.getElementById('p_commitsWrap');
+  let numCommits=1;
+  const MAX=3;
+
+  function isRet(){return retEl.checked;}
+  function personalCap(){return isRet()?25:33.33;}
+  function getSelectedRate(){
+    const s=+salaryEl.value||0;
+    const cb=document.getElementById('p_use75');
+    return (cb&&cb.checked&&s>=25000)?75:45;
+  }
+  function getConsumerThreshold(sr=45){return isRet()?20:(sr===75?41.67:11.67);}
+  function getComboThreshold(){return isRet()?30:21.67;}
+  function getReEstateCombinedThreshold(){return isRet()?40:31.67;}
+
+  function buildCommits(){
+    wrap.innerHTML='';
+    for(let i=1;i<=MAX;i++){
+      const card=buildCommitCard(PREFIX,i,OPTS_ALL,HINT);
+      if(i>1)card.style.display='none';
+      wrap.appendChild(card);
+      // listeners
+      document.getElementById(`p_c${i}`).addEventListener('input',()=>{updateSum();updateImpactChips();checkWarn(i);});
+      document.getElementById(`p_t${i}`).addEventListener('change',()=>{
+        const v=document.getElementById(`p_t${i}`).value;
+        if(v==='لا يوجد')document.getElementById(`p_c${i}`).value=0;
+        updateSum();updateImpactChips();checkWarn(i);
+      });
+    }
+  }
+  buildCommits();
+
+  document.getElementById('p_addBtn').addEventListener('click',()=>{
+    if(numCommits<MAX){
+      numCommits++;
+      document.getElementById(`p_card${numCommits}`).style.display='';
+      if(numCommits===MAX)hideEl(document.getElementById('p_addBtn'));
+      showEl(document.getElementById('p_removeBtn'));
+      updateImpactChips();
+    }
+  });
+  document.getElementById('p_removeBtn').addEventListener('click',()=>{
+    if(numCommits>1){
+      document.getElementById(`p_card${numCommits}`).style.display='none';
+      document.getElementById(`p_t${numCommits}`).value='لا يوجد';
+      document.getElementById(`p_c${numCommits}`).value=0;
+      numCommits--;
+      showEl(document.getElementById('p_addBtn'));
+      if(numCommits===1)hideEl(document.getElementById('p_removeBtn'));
+      updateSum();updateImpactChips();
+    }
+  });
+
+  empEl.addEventListener('change',()=>{if(empEl.checked)retEl.checked=false;updateSum();});
+  retEl.addEventListener('change',()=>{if(retEl.checked)empEl.checked=false;updateSum();});
+  salaryEl.addEventListener('input',()=>{
+    const s=+salaryEl.value||0;
+    document.getElementById('p_bandLabel').textContent=s?bandLabel(s):'—';
+    const optCard=document.getElementById('p_optionsCard');
+    if(s>=25000) optCard.classList.add('show'); else optCard.classList.remove('show');
+    updateSum();updateImpactChips();
+  });
+
+  document.getElementById('p_finOpt').addEventListener('change',()=>{
+    const v=document.getElementById('p_finOpt').value;
+    const w=document.getElementById('p_customWrap');
+    if(v==='full')hideEl(w); else showEl(w);
+    document.getElementById('p_customVal').placeholder=v==='customAmount'?'أدخل مبلغ التمويل':'أدخل القسط الشهري';
+  });
+
+  function updateSum(){
+    const s=+salaryEl.value||0;
+    let sum=0;
+    for(let i=1;i<=MAX;i++){
+      const v=+(document.getElementById(`p_c${i}`)?.value||0);
+      sum+=v;
+      const pEl=document.getElementById(`p_p${i}`);
+      if(pEl)pEl.textContent=s?fmt((v/s)*100,2)+'%':'0%';
+    }
+    document.getElementById('p_sumAmt').textContent=fmt(sum,2);
+    document.getElementById('p_sumPct').textContent=s?fmt((sum/s)*100,2)+'%':'0%';
+  }
+
+  function checkWarn(i){
+    const amt=+(document.getElementById(`p_c${i}`)?.value||0);
+    const typ=document.getElementById(`p_t${i}`)?.value;
+    const w=document.getElementById(`p_w${i}`);
+    if(!w)return false;
+    if(typ==='لا يوجد'&&amt>0){w.textContent='يجب اختيار نوع الالتزام';w.style.display='block';return true;}
+    if(typ!=='لا يوجد'&&amt<=0){w.textContent='يجب إدخال مبلغ';w.style.display='block';return true;}
+    w.style.display='none';return false;
+  }
+  function checkAllWarns(){let a=false;for(let i=1;i<=MAX;i++){if(i<=numCommits&&checkWarn(i))a=true;}return a;}
+
+  function getCommitData(){
+    const types=[],amounts=[];
+    for(let i=1;i<=MAX;i++){
+      types.push(document.getElementById(`p_t${i}`)?.value||'لا يوجد');
+      amounts.push(+(document.getElementById(`p_c${i}`)?.value||0));
+    }
+    return {types,amounts};
+  }
+  function sumBy(name,types,amounts){
+    return amounts.reduce((a,v,i)=>a+(types[i]===name?v:0),0);
+  }
+
+  // ---- CLASSIFY LOGIC — PERSONAL ----
+  // حدود التأثير:
+  // استهلاكي → شخصي:        11.67% (موظف) / 20% (متقاعد)
+  // غير مدعوم → استهلاكي:   10%
+  // مدعوم → استهلاكي:        20%
+  // عقاري + استهلاكي → شخصي (الشرط المزدوج):
+  //   إذا أثّر العقاري على الاستهلاكي (تجاوز 10% أو 20%)
+  //   و مجموع (عقاري% + استهلاكي%) > 31.67% → احتسب 65%، كلاهما مؤثر
+  // نسبة عالية (75%): شرط واحد فقط — مجموع كل الالتزامات > (75% - 33.33% = 41.67%)
+
+  function classifyLow(consPct,nonPct,subPct,sr){
+    const totalPct=consPct+nonPct+subPct;
+    // حالة النسبة العالية: شرط واحد يلغي كل شيء
+    if(sr>45){
+      const threshold=sr-personalCap(); // 75-33.33=41.67
+      const highInf=totalPct>threshold;
+      return{
+        consInf:highInf,nonInf:highInf,subInf:highInf,
+        highRateActive:highInf,highRateThreshold:threshold,
+        retireeForcePersonal:false,makeConsInfluentialFor55:false,makeConsInfluentialFor65:false,
+        hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+        hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0
+      };
+    }
+    const cth=getConsumerThreshold(sr); // 11.67% موظف / 20% متقاعد
+    const consInf=consPct>cth;
+    // غير مدعوم (nonPct): حد التأثير على الاستهلاكي = 10%
+    const nonAffectsCons=nonPct>10;
+    const nonDirect=nonAffectsCons&&consInf; // عقاري غير مدعوم مؤثر مباشر مع استهلاكي مؤثر
+    const nonCombo=nonAffectsCons&&!consInf&&(nonPct+consPct)>getComboThreshold(); // شرط مزدوج → 55%
+    // الشرط المزدوج الجديد: غير مدعوم أثّر على استهلاكي + المجموع > 31.67% → 65%
+    const nonDoubleCombo=nonAffectsCons&&(nonPct+consPct)>31.67;
+    const nonTriggers55=nonDirect||nonCombo;
+    // مدعوم (subPct): حد التأثير على الاستهلاكي = 20%
+    const subAffectsCons=subPct>20;
+    const subDirect=subPct>31.67; // تجاوز حد الشخصي مباشرة
+    // الشرط المزدوج: مدعوم أثّر على استهلاكي + مجموع > 31.67% → 65%
+    const subDoubleCombo=subAffectsCons&&(subPct+consPct)>31.67;
+    let subTriggers65=false,retireeForce=false,makeConsFor65=false;
+    if(isRet()&&(subAffectsCons||nonAffectsCons)&&!consInf){
+      const comboSum=(subPct+nonPct+consPct);
+      if(comboSum>40){subTriggers65=true;makeConsFor65=true;}
+      else retireeForce=true;
+    } else {
+      subTriggers65=subDirect||subDoubleCombo;
+      if(subDoubleCombo||subDirect)makeConsFor65=true;
+    }
+    // غير مدعوم يصل 65% بالشرط المزدوج أيضاً
+    const nonTriggers65=!isRet()&&nonDoubleCombo;
+    return{
+      consInf,
+      nonInf:nonTriggers55||nonTriggers65, // يشمل 55% و65%
+      nonInf55:nonTriggers55,
+      nonInf65:nonTriggers65,
+      subInf:subTriggers65,
+      retireeForcePersonal:retireeForce,
+      makeConsInfluentialFor55:nonCombo,
+      makeConsInfluentialFor65:makeConsFor65||(nonTriggers65&&consPct>0),
+      hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+      hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0
+    };
+  }
+
+  function classifyMid(consPct,nonPct,subPct,sr){
+    const totalPct=consPct+nonPct+subPct;
+    // حالة النسبة العالية
+    if(sr>45){
+      const threshold=sr-personalCap();
+      const highInf=totalPct>threshold;
+      return{
+        consInf:highInf,trigger65:highInf,highRateActive:highInf,
+        rePct:nonPct+subPct,totalCommitments:totalPct,
+        reAffectsCons:highInf,retireeForcePersonal:false,
+        hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+        hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0,
+        nonInf:highInf,subInf:highInf
+      };
+    }
+    const cth=getConsumerThreshold(sr);
+    const consInf=consPct>cth;
+    const rePct=nonPct+subPct;
+    // حد تأثير العقاري على الاستهلاكي في mid = 20% (مدعوم) و 10% (غير مدعوم)
+    // لكن في mid يُجمع العقاري معاً
+    const reAffectsCons=rePct>20;
+    const nonInf=nonPct>31.67;
+    const subInf=subPct>31.67;
+    // الشرط المزدوج: عقاري أثّر على استهلاكي + مجموعهم > 31.67% → 65%
+    const doubleCombo=reAffectsCons&&(rePct+consPct)>31.67;
+    let trigger65=false,retireeForce=false;
+    if(isRet()&&reAffectsCons&&!consInf){
+      if((rePct+consPct)>40)trigger65=true; else retireeForce=true;
+    } else {
+      trigger65=doubleCombo; // الشرط المزدوج الصحيح
+    }
+    return{
+      consInf,rePct,totalCommitments:consPct+rePct,reAffectsCons,trigger65,
+      retireeForcePersonal:retireeForce,hasRealEstate:rePct>0,hasConsumer:consPct>0,
+      hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0,nonInf,subInf
+    };
+  }
+
+  function decideFinalPct(b,flags,sr){
+    if(flags.retireeForcePersonal)return personalCap();
+    // نسبة عالية: شرط واحد فقط
+    if(sr>45&&flags.highRateActive)return sr;
+    let c=[personalCap()];
+    if(b==='low'){
+      if(flags.consInf)c.push(45);
+      if(flags.nonInf55)c.push(55);
+      if(flags.nonInf65||flags.subInf)c.push(65);
+      // غير مدعوم أو مدعوم بالشرط المزدوج → 65%
+    } else {
+      const{hasRealEstate:hR,hasConsumer:hC,hasSupportedRealEstate:hS,hasUnsupportedRealEstate:hU}=flags;
+      if(hR&&hC){
+        if(flags.trigger65)c.push(65);
+        else if(flags.consInf)c.push(45);
+      } else if(hC&&!hR){
+        if(flags.consInf)c.push(45);
+      } else if(hR&&!hC){
+        if((hU&&flags.subInf)||(hS&&flags.nonInf))c.push(65);
+        else if(flags.trigger65)c.push(65);
+      } else {
+        if(flags.trigger65)c.push(65);
+        else if(flags.consInf)c.push(45);
+      }
+    }
+    return Math.max(...c);
+  }
+
+  function typeIsInfluential(b,flags,type){
+    // نسبة عالية: الكل مؤثر إذا تجاوز المجموع الحد
+    if(flags.highRateActive)return true;
+    if(b==='low'){
+      if(type==='تمويل شخصي')return true;
+      if(type==='تمويل استهلاكي')return(flags.consInf||flags.makeConsInfluentialFor55||flags.makeConsInfluentialFor65);
+      if(type==='عقاري غير مدعوم')return flags.nonInf;
+      if(type==='عقاري مدعوم')return flags.subInf;
+    } else {
+      if(flags.trigger65)return(type==='تمويل استهلاكي'||type==='عقاري غير مدعوم'||type==='عقاري مدعوم'||type==='تمويل شخصي');
+      if(flags.consInf&&!flags.reAffectsCons)return(type==='تمويل استهلاكي'||type==='تمويل شخصي');
+      return type==='تمويل شخصي';
+    }
+    return false;
+  }
+
+  function updateImpactChips(){
+    const s=+salaryEl.value||0;
+    const b=band(s);
+    const sr=getSelectedRate();
+    const{types,amounts}=getCommitData();
+    const pCons=sumBy('تمويل استهلاكي',types,amounts);
+    const pNon=sumBy('عقاري غير مدعوم',types,amounts);
+    const pSub=sumBy('عقاري مدعوم',types,amounts);
+    const consPct=s?(pCons/s)*100:0;
+    const nonPct=s?(pNon/s)*100:0;
+    const subPct=s?(pSub/s)*100:0;
+    const flags=b==='low'?classifyLow(consPct,nonPct,subPct,sr):classifyMid(consPct,nonPct,subPct,sr);
+    for(let i=1;i<=MAX;i++){
+      const badge=document.getElementById(`p_i${i}`);
+      if(!badge)continue;
+      const card=document.getElementById(`p_card${i}`);
+      const visible=card&&card.style.display!=='none';
+      const typ=types[i-1];const amt=amounts[i-1];
+      const show=visible&&typ!=='لا يوجد'&&amt>0;
+      if(!show){badge.className='impact-badge';continue;}
+      const inf=typeIsInfluential(b,flags,typ);
+      badge.className='impact-badge '+(inf?'inf':'ok');
+      badge.textContent=inf?'مؤثر':'غير مؤثر';
+    }
+  }
+
+  function buildExplanation(b,flags,finalPct,types,amounts){
+    const labels=['الأول','الثاني','الثالث'];
+    const comms=[];
+    for(let i=0;i<MAX;i++){
+      const t=types[i],a=amounts[i];
+      if(t!=='لا يوجد'&&a>0)comms.push({label:labels[i],type:t,inf:typeIsInfluential(b,flags,t)});
+    }
+    const inf=comms.filter(c=>c.inf);
+    const ninf=comms.filter(c=>!c.inf);
+    let ex=`تم احتساب النسبة ${fmt(finalPct,2)}%`;
+    if(inf.length===0&&ninf.length>0)ex+=' لأن الالتزامات غير مؤثرة';
+    else if(inf.length>0&&ninf.length>0){
+      ex+=` لأن الالتزام ${inf.map(c=>c.label).join(' و')} ${inf.length===1?'مؤثر':'مؤثرة'}`;
+      ex+=` والالتزام ${ninf.map(c=>c.label).join(' و')} ${ninf.length===1?'غير مؤثر':'غير مؤثرة'}`;
+    } else if(inf.length>0){
+      ex+=` لأن الالتزام ${inf.map(c=>c.label).join(' و')} ${inf.length===1?'مؤثر':'مؤثرة'}`;
+    }
+    return ex+'.';
+  }
+
+  function doCalculate(){
+    // hide errors
+    document.querySelectorAll('#panelPersonal .err-msg').forEach(e=>e.style.display='none');
+    document.querySelectorAll('#panelPersonal input.err').forEach(e=>e.classList.remove('err'));
+    if(checkAllWarns())return;
+
+    const nameVal=document.getElementById('p_name').value.trim();
+    if(!nameVal){
+      const e=document.getElementById('p_nameErr');e.textContent='يرجى إدخال اسم العميل';e.style.display='block';
+      document.getElementById('p_name').classList.add('err');return;
+    }
+    const s=+salaryEl.value;
+    if(!s||s<=0){const e=document.getElementById('p_salaryErr');e.textContent='يرجى إدخال الراتب';e.style.display='block';salaryEl.classList.add('err');return;}
+    const months=parseInt(monthsEl.value);
+    if(!months||months<6||months>60){const e=document.getElementById('p_monthsErr');e.textContent='المدة من 6 إلى 60 شهراً';e.style.display='block';monthsEl.classList.add('err');return;}
+    const rate=parseFloat(rateEl.value);
+    if(isNaN(rate)||rate<0){const e=document.getElementById('p_rateErr');e.textContent='يرجى إدخال نسبة الفائدة';e.style.display='block';rateEl.classList.add('err');return;}
+
+    const payoff=+document.getElementById('p_payoff').value||0;
+    const b=band(s);
+    const sr=getSelectedRate();
+    const{types,amounts}=getCommitData();
+    const pCons=sumBy('تمويل استهلاكي',types,amounts);
+    const pNon=sumBy('عقاري غير مدعوم',types,amounts);
+    const pSub=sumBy('عقاري مدعوم',types,amounts);
+    const pPers=sumBy('تمويل شخصي',types,amounts);
+    const consPct=s?(pCons/s)*100:0;
+    const nonPct=s?(pNon/s)*100:0;
+    const subPct=s?(pSub/s)*100:0;
+    const flags=b==='low'?classifyLow(consPct,nonPct,subPct,sr):classifyMid(consPct,nonPct,subPct,sr);
+    const finalPct=decideFinalPct(b,flags,sr);
+    let ceiling=s*(finalPct/100);
+
+    let infTotal=pPers;
+    if(b==='low'){
+      if(flags.consInf||flags.makeConsInfluentialFor55||flags.makeConsInfluentialFor65)infTotal+=pCons;
+      if(flags.nonInf)infTotal+=pNon;
+      if(flags.subInf)infTotal+=pSub;
+    } else {
+      if(flags.trigger65)infTotal+=(pNon+pSub+pCons);
+      else if(flags.consInf&&!flags.reAffectsCons)infTotal+=pCons;
+    }
+
+    let maxMonthly=Math.max(0,ceiling-infTotal);
+    const maxFinTotal=maxMonthly*months;
+    const maxNet=maxFinTotal/(1+(rate*months)/1200);
+
+    // custom option
+    const opt=document.getElementById('p_finOpt').value;
+    const customVal=+(document.getElementById('p_customVal').value||0);
+    let selectedNet=maxNet, selectedMonthly=maxMonthly;
+    if(opt==='customAmount'&&customVal>0){
+      if(customVal>maxNet){
+        const e=document.getElementById('p_customErr');
+        e.textContent=`المبلغ (${fmt(customVal)}) يتجاوز الحد (${fmt(maxNet)})`;e.style.display='block';return;
+      }
+      selectedNet=customVal;
+    } else if(opt==='customInstallment'&&customVal>0){
+      if(customVal>maxMonthly){
+        const e=document.getElementById('p_customErr');
+        e.textContent=`القسط (${fmt(customVal)}) يتجاوز الحد (${fmt(maxMonthly)})`;e.style.display='block';return;
+      }
+      selectedMonthly=customVal;
+    }
+
+    let net,interestAmt,finTotal,monthly;
+    const totalRateCalc=rate*(months/12);
+    if(opt==='customInstallment'&&customVal>0){
+      monthly=selectedMonthly;finTotal=monthly*months;
+      net=finTotal/(1+(rate*months)/1200);
+      interestAmt=net*(totalRateCalc/100);
+    } else {
+      net=selectedNet;interestAmt=net*(totalRateCalc/100);
+      finTotal=net+interestAmt;monthly=finTotal/months;
+    }
+    const feeRaw=net*0.005;
+    const adminFee=Math.min(feeRaw,2500);
+    const vat=adminFee*0.15;
+    const totalFees=adminFee+vat;
+
+    // explanation
+    const expl=buildExplanation(b,flags,finalPct,types,amounts);
+    const eb=document.getElementById('p_explain');
+    eb.textContent=expl;eb.classList.add('show');
+
+    // render table
+    const rows=[
+      ['الاسم',nameVal],
+      ['صافي مبلغ التمويل',fmt(net)+' ريال','highlight'],
+      ['مبلغ الفائدة',fmt(interestAmt)+' ريال'],
+      ['التمويل شامل الفائدة',fmt(finTotal)+' ريال'],
+      ['الرسوم الإدارية (شامل الضريبة)',fmt(totalFees)+' ريال'],
+      ['القسط الشهري',fmt(monthly)+' ريال','accent'],
+      ['المدة بالأشهر',months+' شهر'],
+      ['الصافي بعد السداد',fmt(net-totalFees-payoff)+' ريال'],
+    ];
+    const tbl=document.getElementById('p_table');
+    tbl.innerHTML=rows.map(r=>`
+      <div class="rt-row">
+        <div class="rt-key">${r[0]}</div>
+        <div class="rt-val ${r[2]||''}">${r[1]}</div>
+      </div>`).join('');
+    document.getElementById('p_results').classList.add('show');
+
+    if(net<5000)showModal('eligModal');
+
+    updateImpactChips();
+  }
+
+  document.getElementById('p_calcBtn').addEventListener('click',doCalculate);
+  document.getElementById('p_recalcBtn').addEventListener('click',doCalculate);
+
+  document.getElementById('p_clearBtn').addEventListener('click',()=>{
+    document.getElementById('p_name').value='';
+    document.getElementById('p_mobile').value='';
+    document.getElementById('p_payoff').value='';
+    salaryEl.value='';monthsEl.value='';rateEl.value='';
+    for(let i=1;i<=MAX;i++){
+      document.getElementById(`p_c${i}`).value=0;
+      document.getElementById(`p_t${i}`).value='لا يوجد';
+      document.getElementById(`p_w${i}`).style.display='none';
+      document.getElementById(`p_i${i}`).className='impact-badge';
+    }
+    numCommits=1;
+    for(let i=2;i<=MAX;i++)document.getElementById(`p_card${i}`).style.display='none';
+    showEl(document.getElementById('p_addBtn'));hideEl(document.getElementById('p_removeBtn'));
+    document.getElementById('p_explain').classList.remove('show');
+    document.getElementById('p_results').classList.remove('show');
+    document.getElementById('p_optionsCard').classList.remove('show');
+    document.getElementById('p_bandLabel').textContent='—';
+    updateSum();
+  });
+
+  // share btn
+  document.getElementById('p_shareBtn').addEventListener('click',async()=>{
+    const el=document.getElementById('p_results');
+    if(!el)return;
+    try{
+      const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      document.head.appendChild(s);
+      await new Promise(r=>{s.onload=r;s.onerror=r;});
+      const canvas=await html2canvas(el,{scale:2,backgroundColor:'#0f1117',useCORS:true});
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=`${document.getElementById('p_name').value||'عميل'}-التمويل.png`;
+      a.click();
+    }catch(e){alert('تعذّر إنشاء الصورة');}
+  });
+
+  updateSum();
+})();
+
+// ============================================================
+// ============================================================
+// FINC PLAN CALCULATOR
+// ============================================================
+// ============================================================
+(function(){
+  const PREFIX='f';
+  const OPTS = ["لا يوجد","تمويل استهلاكي","عقاري مدعوم","عقاري غير مدعوم"];
+  const HINT = 'الاستهلاكي = مجموع كل الالتزامات غير العقاري (التمويل الشخصي من البنوك+شركات التمويل+بطاقات+سيارة+بنك تنمية)';
+
+  const salaryEl=document.getElementById('f_salary');
+  const empEl=document.getElementById('f_emp');
+  const retEl=document.getElementById('f_ret');
+  const monthsEl=document.getElementById('f_months');
+  const rateEl=document.getElementById('f_rate');
+  const wrap=document.getElementById('f_commitsWrap');
+  let numCommits=1;
+  const MAX=3;
+
+  function isRet(){return retEl.checked;}
+  function baseCap(){return isRet()?25:45;}
+  function getSelectedRate(){
+    const cbs=document.querySelectorAll('.f_deductCb:checked');
+    return cbs.length>0?parseInt(cbs[0].value,10):45;
+  }
+  function getConsumerThreshold(sr=45){return isRet()?20:Math.max(0,sr-45);}
+  function getComboThreshold(){return isRet()?30:10;}
+  function getReEstateCombinedThreshold(){return isRet()?40:31.67;}
+
+  function buildCommits(){
+    wrap.innerHTML='';
+    for(let i=1;i<=MAX;i++){
+      const card=buildCommitCard(PREFIX,i,OPTS,HINT);
+      if(i>1)card.style.display='none';
+      wrap.appendChild(card);
+      document.getElementById(`f_c${i}`).addEventListener('input',()=>{
+        normalizeDecimal(document.getElementById(`f_c${i}`));
+        updateSum();updateImpactChips();checkWarn(i);
+      });
+      document.getElementById(`f_t${i}`).addEventListener('change',()=>{
+        if(document.getElementById(`f_t${i}`).value==='لا يوجد')document.getElementById(`f_c${i}`).value=0;
+        updateSum();updateImpactChips();checkWarn(i);
+      });
+    }
+  }
+  buildCommits();
+
+  function normalizeDecimal(el){
+    if(!el)return;
+    const v=el.value||'';
+    const n=v.replace(/,/g,'.');
+    if(n!==v)el.value=n;
+  }
+  salaryEl.addEventListener('input',()=>{normalizeDecimal(salaryEl);onSalaryChange();});
+  rateEl.addEventListener('input',()=>{normalizeDecimal(rateEl);});
+
+  function onSalaryChange(){
+    const s=+salaryEl.value||0;
+    document.getElementById('f_bandLabel').textContent=s?bandLabel(s):'—';
+    updateDeductAvail(s);
+    updateSum();updateImpactChips();
+  }
+
+  function updateDeductAvail(s){
+    document.querySelectorAll('.f_deductCb').forEach(cb=>{
+      const v=parseInt(cb.value);
+      cb.disabled=(v===70&&s<1000)||(v>=75&&s<25000);
+      if(cb.disabled)cb.checked=false;
+    });
+    // show options card if salary entered
+    const oc=document.getElementById('f_optionsCard');
+    if(s>0)oc.classList.add('show'); else oc.classList.remove('show');
+  }
+
+  // mutual exclusive checkboxes
+  document.querySelectorAll('.f_deductCb').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      if(cb.checked)document.querySelectorAll('.f_deductCb').forEach(c=>{if(c!==cb)c.checked=false;});
+      updateImpactChips();
+    });
+  });
+
+  empEl.addEventListener('change',()=>{if(empEl.checked)retEl.checked=false;updateSum();});
+  retEl.addEventListener('change',()=>{if(retEl.checked)empEl.checked=false;updateSum();});
+
+  document.getElementById('f_addBtn').addEventListener('click',()=>{
+    if(numCommits<MAX){
+      numCommits++;
+      document.getElementById(`f_card${numCommits}`).style.display='';
+      if(numCommits===MAX)hideEl(document.getElementById('f_addBtn'));
+      showEl(document.getElementById('f_removeBtn'));
+      updateImpactChips();
+    }
+  });
+  document.getElementById('f_removeBtn').addEventListener('click',()=>{
+    if(numCommits>1){
+      document.getElementById(`f_card${numCommits}`).style.display='none';
+      document.getElementById(`f_t${numCommits}`).value='لا يوجد';
+      document.getElementById(`f_c${numCommits}`).value=0;
+      numCommits--;
+      showEl(document.getElementById('f_addBtn'));
+      if(numCommits===1)hideEl(document.getElementById('f_removeBtn'));
+      updateSum();updateImpactChips();
+    }
+  });
+
+  document.getElementById('f_finOpt').addEventListener('change',()=>{
+    const v=document.getElementById('f_finOpt').value;
+    const w=document.getElementById('f_customWrap');
+    if(v==='full')hideEl(w); else showEl(w);
+    document.getElementById('f_customVal').placeholder=v==='customAmount'?'أدخل مبلغ التمويل':'أدخل القسط الشهري';
+  });
+
+  function updateSum(){
+    const s=+salaryEl.value||0;
+    let sum=0;
+    for(let i=1;i<=MAX;i++){
+      const v=+(document.getElementById(`f_c${i}`)?.value||0);
+      sum+=v;
+      const p=document.getElementById(`f_p${i}`);
+      if(p)p.textContent=s?fmt((v/s)*100,2)+'%':'0%';
+    }
+    document.getElementById('f_sumAmt').textContent=fmt(sum,2);
+    document.getElementById('f_sumPct').textContent=s?fmt((sum/s)*100,2)+'%':'0%';
+  }
+
+  function checkWarn(i){
+    const amt=+(document.getElementById(`f_c${i}`)?.value||0);
+    const typ=document.getElementById(`f_t${i}`)?.value;
+    const w=document.getElementById(`f_w${i}`);
+    if(!w)return false;
+    if(typ==='لا يوجد'&&amt>0){w.textContent='يجب اختيار نوع الالتزام';w.style.display='block';return true;}
+    if(typ!=='لا يوجد'&&amt<=0){w.textContent='يجب إدخال مبلغ';w.style.display='block';return true;}
+    w.style.display='none';return false;
+  }
+  function checkAllWarns(){let a=false;for(let i=1;i<=MAX;i++){if(i<=numCommits&&checkWarn(i))a=true;}return a;}
+
+  function getCommitData(){
+    const types=[],amounts=[];
+    for(let i=1;i<=MAX;i++){
+      types.push(document.getElementById(`f_t${i}`)?.value||'لا يوجد');
+      amounts.push(+(document.getElementById(`f_c${i}`)?.value||0));
+    }
+    return{types,amounts};
+  }
+  function sumBy(name,types,amounts){return amounts.reduce((a,v,i)=>a+(types[i]===name?v:0),0);}
+
+  // ---- CLASSIFY LOGIC — شركات التمويل ----
+  // الشرط المزدوج: عقاري أثّر على استهلاكي + مجموع > 31.67% → 65%
+  // نسبة عالية (70/75/80%): مجموع كل الالتزامات > (نسبة - 33.33%)
+
+  function classifyLow(consPct,nonPct,subPct,sr){
+    const totalPct=consPct+nonPct+subPct;
+    if(sr>45){
+      const threshold=sr-33.33;
+      const highInf=totalPct>threshold;
+      return{consInf:highInf,nonInf:highInf,nonInf55:false,nonInf65:highInf,subInf:highInf,
+        highRateActive:highInf,retireeForcePersonal:false,
+        makeConsInfluentialFor55:false,makeConsInfluentialFor65:highInf,
+        hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+        hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0};
+    }
+    const cth=getConsumerThreshold(sr);
+    const consInf=consPct>cth;
+    const nonAffectsCons=nonPct>10;
+    const nonDirect=nonAffectsCons&&consInf;
+    const nonCombo=nonAffectsCons&&!consInf&&(nonPct+consPct)>getComboThreshold();
+    const nonDoubleCombo=nonAffectsCons&&(nonPct+consPct)>31.67;
+    const nonTriggers55=nonDirect||nonCombo;
+    const subAffectsCons=subPct>20;
+    const subDirect=subPct>20;
+    const subDoubleCombo=subAffectsCons&&(subPct+consPct)>31.67;
+    let subTriggers65=false,retireeForce=false,makeConsFor65=false;
+    if(isRet()&&(subAffectsCons||nonAffectsCons)&&!consInf){
+      if((subPct+nonPct+consPct)>40){subTriggers65=true;makeConsFor65=true;}
+      else retireeForce=true;
+    } else {
+      subTriggers65=subDirect||subDoubleCombo;
+      if(subDoubleCombo||subDirect)makeConsFor65=true;
+    }
+    const nonTriggers65=!isRet()&&nonDoubleCombo;
+    return{consInf,nonInf:nonTriggers55||nonTriggers65,nonInf55:nonTriggers55,nonInf65:nonTriggers65,
+      subInf:subTriggers65,retireeForcePersonal:retireeForce,
+      makeConsInfluentialFor55:nonCombo,makeConsInfluentialFor65:makeConsFor65||(nonTriggers65&&consPct>0),
+      hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+      hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0};
+  }
+
+  function classifyMid(consPct,nonPct,subPct,sr){
+    const totalPct=consPct+nonPct+subPct;
+    if(sr>45){
+      const threshold=sr-33.33;
+      const highInf=totalPct>threshold;
+      return{consInf:highInf,trigger65:highInf,highRateActive:highInf,
+        rePct:nonPct+subPct,totalCommitments:totalPct,reAffectsCons:highInf,
+        retireeForcePersonal:false,hasRealEstate:(nonPct+subPct)>0,hasConsumer:consPct>0,
+        hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0,
+        nonInf:highInf,subInf:highInf};
+    }
+    const cth=getConsumerThreshold(sr);
+    const consInf=consPct>cth;
+    const rePct=nonPct+subPct;
+    const reAffectsCons=rePct>20;
+    const nonInf=nonPct>20;
+    const subInf=subPct>20;
+    const doubleCombo=reAffectsCons&&(rePct+consPct)>31.67;
+    let trigger65=false,retireeForce=false;
+    if(isRet()&&reAffectsCons&&!consInf){
+      if((rePct+consPct)>40)trigger65=true; else retireeForce=true;
+    } else {
+      trigger65=doubleCombo;
+    }
+    return{consInf,rePct,totalCommitments:consPct+rePct,reAffectsCons,trigger65,
+      retireeForcePersonal:retireeForce,hasRealEstate:rePct>0,hasConsumer:consPct>0,
+      hasSupportedRealEstate:nonPct>0,hasUnsupportedRealEstate:subPct>0,nonInf,subInf};
+  }
+
+  function decideFinalPct(b,flags,sr){
+    if(flags.retireeForcePersonal)return baseCap();
+    if(sr>45&&flags.highRateActive)return sr;
+    let c=[baseCap()];
+    if(b==='low'){
+      if(flags.consInf)c.push(45);
+      if(flags.nonInf55)c.push(55);
+      if(flags.nonInf65||flags.subInf)c.push(65);
+    } else {
+      const{hasRealEstate:hR,hasConsumer:hC,hasSupportedRealEstate:hS,hasUnsupportedRealEstate:hU}=flags;
+      if(hR&&!hC)c.push(65);
+      if(hR&&hC){
+        if(flags.trigger65)c.push(65); else if(flags.consInf)c.push(45);
+      } else if(hC&&!hR){
+        if(flags.consInf)c.push(45);
+      } else if(hR&&!hC){
+        if((hU&&flags.subInf)||(hS&&flags.nonInf)||flags.trigger65)c.push(65);
+      } else {
+        if(flags.trigger65)c.push(65); else if(flags.consInf)c.push(45);
+      }
+    }
+    return Math.max(...c);
+  }
+
+  function typeIsInfluential(b,flags,type){
+    if(flags.highRateActive)return true;
+    if(b==='low'){
+      if(type==='تمويل استهلاكي')return(flags.consInf||flags.makeConsInfluentialFor65||flags.makeConsInfluentialFor55);
+      if(type==='عقاري مدعوم')return flags.subInf||false;
+      if(type==='عقاري غير مدعوم')return flags.nonInf||false;
+    } else if(b==='mid'){
+      if(flags.trigger65)return(type==='تمويل استهلاكي'||type==='عقاري مدعوم'||type==='عقاري غير مدعوم');
+      if(flags.consInf&&!flags.reAffectsCons)return(type==='تمويل استهلاكي');
+      return false;
+    } else {return(flags&&flags.othersInf)||false;}
+    return false;
+  }
+
+  function updateImpactChips(){
+    const s=+salaryEl.value||0;
+    const b=band(s);
+    const sr=getSelectedRate();
+    const{types,amounts}=getCommitData();
+    const pCons=sumBy('تمويل استهلاكي',types,amounts);
+    const pS=sumBy('عقاري مدعوم',types,amounts);
+    const pU=sumBy('عقاري غير مدعوم',types,amounts);
+    const consPct=s?(pCons/s)*100:0;
+    const sPct=s?(pS/s)*100:0;
+    const uPct=s?(pU/s)*100:0;
+    const flags=b==='low'?classifyLow(consPct,uPct,sPct,sr):classifyMid(consPct,sPct,uPct,sr);
+    for(let i=1;i<=MAX;i++){
+      const badge=document.getElementById(`f_i${i}`);
+      if(!badge)continue;
+      const card=document.getElementById(`f_card${i}`);
+      const visible=card&&card.style.display!=='none';
+      const typ=types[i-1];const amt=amounts[i-1];
+      const show=visible&&typ!=='لا يوجد'&&amt>0;
+      if(!show){badge.className='impact-badge';continue;}
+      const inf=typeIsInfluential(b,flags,typ);
+      badge.className='impact-badge '+(inf?'inf':'ok');
+      badge.textContent=inf?'مؤثر':'غير مؤثر';
+    }
+  }
+
+  function buildExplanation(b,flags,finalPct,types,amounts){
+    const labels=['الأول','الثاني','الثالث'];
+    const comms=[];
+    for(let i=0;i<MAX;i++){
+      const t=types[i],a=amounts[i];
+      if(t!=='لا يوجد'&&a>0)comms.push({label:labels[i],type:t,inf:typeIsInfluential(b,flags,t)});
+    }
+    const inf=comms.filter(c=>c.inf);
+    const ninf=comms.filter(c=>!c.inf);
+    let ex=`تم احتساب النسبة ${fmt(finalPct,2)}%`;
+    if(inf.length===0&&ninf.length>0)ex+=' لأن الالتزامات غير مؤثرة';
+    else if(inf.length>0&&ninf.length>0){
+      ex+=` لأن الالتزام ${inf.map(c=>c.label).join(' و')} ${inf.length===1?'مؤثر':'مؤثرة'}`;
+      ex+=` والالتزام ${ninf.map(c=>c.label).join(' و')} ${ninf.length===1?'غير مؤثر':'غير مؤثرة'}`;
+    } else if(inf.length>0){
+      ex+=` لأن الالتزام ${inf.map(c=>c.label).join(' و')} ${inf.length===1?'مؤثر':'مؤثرة'}`;
+    }
+    return ex+'.';
+  }
+
+  function doCalculate(){
+    document.querySelectorAll('#panelFincPln .err-msg').forEach(e=>e.style.display='none');
+    document.querySelectorAll('#panelFincPln input.err').forEach(e=>e.classList.remove('err'));
+    if(checkAllWarns())return;
+
+    const nameVal=document.getElementById('f_name').value.trim();
+    if(!nameVal){
+      const e=document.getElementById('f_nameErr');e.textContent='يرجى إدخال اسم العميل';e.style.display='block';
+      document.getElementById('f_name').classList.add('err');return;
+    }
+    const s=+salaryEl.value;
+    if(!s||s<=0){const e=document.getElementById('f_salaryErr');e.textContent='يرجى إدخال الراتب';e.style.display='block';salaryEl.classList.add('err');return;}
+    const months=parseInt(monthsEl.value);
+    if(!months||months<6||months>60){const e=document.getElementById('f_monthsErr');e.textContent='المدة من 6 إلى 60 شهراً';e.style.display='block';monthsEl.classList.add('err');return;}
+    const rate=parseFloat(rateEl.value);
+    if(isNaN(rate)||rate<0){const e=document.getElementById('f_rateErr');e.textContent='يرجى إدخال نسبة الفائدة';e.style.display='block';rateEl.classList.add('err');return;}
+
+    const payoff=+document.getElementById('f_payoff').value||0;
+    const b=band(s);
+    const sr=getSelectedRate();
+    const{types,amounts}=getCommitData();
+
+    // check easy financing (no commitments)
+    const isEasy=types.every(t=>t==='لا يوجد')&&amounts.every(a=>a===0);
+
+    const pCons=sumBy('تمويل استهلاكي',types,amounts);
+    const pS=sumBy('عقاري مدعوم',types,amounts);
+    const pU=sumBy('عقاري غير مدعوم',types,amounts);
+    const consPct=s?(pCons/s)*100:0;
+    const sPct=s?(pS/s)*100:0;
+    const uPct=s?(pU/s)*100:0;
+    const flags=b==='low'?classifyLow(consPct,uPct,sPct,sr):classifyMid(consPct,sPct,uPct,sr);
+    const finalPct=decideFinalPct(b,flags,sr);
+    let ceiling=s*(finalPct/100);
+
+    // influential total
+    let infTotal=0;
+    if(b==='low'){
+      if(flags.consInf||flags.makeConsInfluentialFor55||flags.makeConsInfluentialFor65)infTotal+=pCons;
+      if(flags.nonInf)infTotal+=pU;
+      if(flags.subInf)infTotal+=pS;
+    } else {
+      if(flags.trigger65)infTotal+=(pS+pU+pCons);
+      else if(flags.consInf&&!flags.reAffectsCons)infTotal+=pCons;
+    }
+
+    let maxMonthly=Math.max(0,ceiling-infTotal);
+    if(isEasy)maxMonthly=Math.min(maxMonthly,s*0.45);
+    const maxNet=( maxMonthly*months)/(1+(rate*months)/1200);
+
+    const opt=document.getElementById('f_finOpt').value;
+    const customVal=+(document.getElementById('f_customVal').value||0);
+    let selectedNet=maxNet,selectedMonthly=maxMonthly;
+    if(opt==='customAmount'&&customVal>0){
+      if(customVal>maxNet){
+        const e=document.getElementById('f_customErr');
+        e.textContent=`المبلغ (${fmt(customVal)}) يتجاوز الحد (${fmt(maxNet)})`;e.style.display='block';return;
+      }
+      selectedNet=customVal;
+    } else if(opt==='customInstallment'&&customVal>0){
+      if(customVal>maxMonthly){
+        const e=document.getElementById('f_customErr');
+        e.textContent=`القسط (${fmt(customVal)}) يتجاوز الحد (${fmt(maxMonthly)})`;e.style.display='block';return;
+      }
+      selectedMonthly=customVal;
+    }
+
+    let net,interestAmt,finTotal,monthly;
+    const totalRateCalc=rate*(months/12);
+    if(opt==='customInstallment'&&customVal>0){
+      monthly=selectedMonthly;finTotal=monthly*months;
+      net=finTotal/(1+(rate*months)/1200);
+      interestAmt=net*(totalRateCalc/100);
+    } else {
+      net=selectedNet;interestAmt=net*(totalRateCalc/100);
+      finTotal=net+interestAmt;monthly=finTotal/months;
+    }
+    const adminFee=Math.min(net*0.005,2500);
+    const totalFees=adminFee*1.15;
+
+    const expl=buildExplanation(b,flags,finalPct,types,amounts);
+    const eb=document.getElementById('f_explain');
+    eb.textContent=expl;eb.classList.add('show');
+
+    const rows=[
+      ['الاسم',nameVal],
+      ['صافي مبلغ التمويل',fmt(net)+' ريال','highlight'],
+      ['مبلغ الفائدة',fmt(interestAmt)+' ريال'],
+      ['التمويل شامل الفائدة',fmt(finTotal)+' ريال'],
+      ['الرسوم الإدارية (شامل الضريبة)',fmt(totalFees)+' ريال'],
+      ['القسط الشهري',fmt(monthly)+' ريال','accent'],
+      ['المدة بالأشهر',months+' شهر'],
+      ['الصافي بعد السداد',fmt(net-totalFees-payoff)+' ريال'],
+    ];
+    const tbl=document.getElementById('f_table');
+    tbl.innerHTML=rows.map(r=>`
+      <div class="rt-row">
+        <div class="rt-key">${r[0]}</div>
+        <div class="rt-val ${r[2]||''}">${r[1]}</div>
+      </div>`).join('');
+    document.getElementById('f_results').classList.add('show');
+
+    if(isEasy)showModal('easyModal');
+    if(net<5000)showModal('eligModal');
+    updateImpactChips();
+  }
+
+  document.getElementById('f_calcBtn').addEventListener('click',doCalculate);
+  document.getElementById('f_recalcBtn').addEventListener('click',doCalculate);
+
+  document.getElementById('f_clearBtn').addEventListener('click',()=>{
+    document.getElementById('f_name').value='';
+    document.getElementById('f_mobile').value='';
+    document.getElementById('f_payoff').value='';
+    salaryEl.value='';monthsEl.value='';rateEl.value='';
+    for(let i=1;i<=MAX;i++){
+      document.getElementById(`f_c${i}`).value=0;
+      document.getElementById(`f_t${i}`).value='لا يوجد';
+      document.getElementById(`f_w${i}`).style.display='none';
+      document.getElementById(`f_i${i}`).className='impact-badge';
+    }
+    numCommits=1;
+    for(let i=2;i<=MAX;i++)document.getElementById(`f_card${i}`).style.display='none';
+    showEl(document.getElementById('f_addBtn'));hideEl(document.getElementById('f_removeBtn'));
+    document.getElementById('f_explain').classList.remove('show');
+    document.getElementById('f_results').classList.remove('show');
+    document.getElementById('f_optionsCard').classList.remove('show');
+    document.getElementById('f_bandLabel').textContent='—';
+    document.querySelectorAll('.f_deductCb').forEach(c=>c.checked=false);
+    updateSum();
+  });
+
+  document.getElementById('f_shareBtn').addEventListener('click',async()=>{
+    const el=document.getElementById('f_results');
+    if(!el)return;
+    try{
+      const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      document.head.appendChild(s);
+      await new Promise(r=>{s.onload=r;s.onerror=r;});
+      const canvas=await html2canvas(el,{scale:2,backgroundColor:'#0f1117',useCORS:true});
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=`${document.getElementById('f_name').value||'عميل'}-إمكان.png`;
+      a.click();
+    }catch(e){alert('تعذّر إنشاء الصورة');}
+  });
+
+  updateSum();
+})();
+</script>
+</body>
+</html>
