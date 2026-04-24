@@ -6,16 +6,18 @@ import {
   UserPlus,
   FileBarChart2,
   Calculator,
+  BotMessageSquare,
   ShieldCheck,
   UsersRound,
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/',            label: 'الرئيسية',    icon: LayoutDashboard },
-  { to: '/clients',     label: 'العملاء',     icon: Users },
-  { to: '/add-client',  label: 'إضافة عميل', icon: UserPlus },
-  { to: '/reports',     label: 'التقارير',    icon: FileBarChart2 },
-  { to: '/calculator',  label: 'المحتسب',     icon: Calculator },
+  { to: '/',                  label: 'الرئيسية',      icon: LayoutDashboard },
+  { to: '/clients',           label: 'العملاء',       icon: Users },
+  { to: '/add-client',        label: 'إضافة عميل',   icon: UserPlus },
+  { to: '/reports',           label: 'التقارير',      icon: FileBarChart2 },
+  { to: '/calculator',        label: 'المحتسب',       icon: Calculator },
+  { to: '/claude-calculator', label: 'محتسب كلاود',  icon: BotMessageSquare },
 ]
 
 export function Sidebar({ open, onClose }) {
