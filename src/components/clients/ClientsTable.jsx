@@ -1,4 +1,4 @@
-import { Trash2, Calculator } from 'lucide-react'
+import { Trash2, Calculator, Pencil } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '../ui/Badge'
 import { formatCurrency, formatDate, calcProfit } from '../../utils/formatters'
@@ -45,6 +45,13 @@ export function ClientsTable({ clients, onDelete }) {
               <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatDate(c.created_at)}</td>
               <td className="px-3 py-2.5 no-print">
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => navigate(`/edit-client/${c.id}`)}
+                    className="p-1.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                    title="تعديل العميل"
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button
                     onClick={() => navigate('/claude-calculator', { state: { client: { id: c.id, name: c.name, phone: c.phone } } })}
                     className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"

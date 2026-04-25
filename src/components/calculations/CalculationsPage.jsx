@@ -1,8 +1,48 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2, Calculator, User, Download } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { useCalculations } from '../../hooks/useCalculations'
+
+function buildPrintNode(calc, dateStr) {
+  const typeLabel = calc.calc_type === 'personal' ? 'التمويل الشخصي' : 'شركات التمويل'
+  const rows = Object.entries(calc.result || {})
+    .map(([k, v]) => `<tr><td style="padding:8px 14px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:14px">${k}</td><td style="padding:8px 14px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#1d4ed8;font-size:14px;text-align:left">${v}</td></tr>`)
+    .join('')
+
+  const inputRows = [
+    calc.inputs?.salary ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">الراتب: ${Number(calc.inputs.salary).toLocaleString('ar-SA')} ر.س</span>` : '',
+    calc.inputs?.months ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">المدة: ${calc.inputs.months} شهر</span>` : '',
+    calc.inputs?.rate   ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">الفائدة: ${calc.inputs.rate}%</span>` : '',
+    calc.inputs?.payoff && Number(calc.inputs.payoff) > 0 ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">مبلغ السداد: ${Number(calc.inputs.payoff).toLocaleString('ar-SA')} ر.س</span>` : '',
+  ].filter(Boolean).join(' ')
+
+  const node = document.createElement('div')
+  node.style.cssText = 'position:fixed;left:-9999px;top:0;direction:rtl;font-family:Tajawal,Arial,sans-serif;background:#fff;padding:32px;width:520px;border-radius:16px'
+  node.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e5e7eb">
+      <div>
+        <div style="font-size:20px;font-weight:800;color:#1e293b">حسبة ${typeLabel}</div>
+        <div style="font-size:13px;color:#94a3b8;margin-top:4px">${dateStr}</div>
+      </div>
+      <span style="background:${calc.calc_type === 'personal' ? '#eef2ff' : '#ecfdf5'};color:${calc.calc_type === 'personal' ? '#4f46e5' : '#059669'};font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px">${typeLabel}</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;color:#1e293b">${calc.client_name}</div>
+      ${calc.client_phone ? `<div style="font-size:13px;color:#94a3b8;margin-top:2px">${calc.client_phone}</div>` : ''}
+    </div>
+    ${inputRows ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${inputRows}</div>` : ''}
+    <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+      <thead><tr style="background:#f8fafc">
+        <th style="padding:10px 14px;text-align:right;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb">البند</th>
+        <th style="padding:10px 14px;text-align:left;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb">القيمة</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:16px;font-size:11px;color:#cbd5e1;text-align:center">حسبة مبدئية — يرجى التحقق مع الجهة التمويلية</div>
+  `
+  return node
+}
 
 export function CalculationsPage() {
   const { calculations, loading, deleteCalculation } = useCalculations()
@@ -11,7 +51,6 @@ export function CalculationsPage() {
   const [filterType, setFilterType] = useState('all')
   const [deleting, setDeleting] = useState(null)
   const [downloading, setDownloading] = useState(null)
-  const cardRefs = useRef({})
 
   const filtered = calculations.filter(c => {
     const matchSearch = !search.trim() || c.client_name.includes(search) || (c.client_phone || '').includes(search)
@@ -26,16 +65,17 @@ export function CalculationsPage() {
   }
 
   async function handleDownload(calc) {
-    const el = cardRefs.current[calc.id]
-    if (!el) return
     setDownloading(calc.id)
+    const node = buildPrintNode(calc, formatDate(calc.created_at))
+    document.body.appendChild(node)
     try {
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null })
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
       const link = document.createElement('a')
       link.download = `حسبة-${calc.client_name}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     } finally {
+      node.remove()
       setDownloading(null)
     }
   }
@@ -92,7 +132,7 @@ export function CalculationsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(calc => (
-            <div key={calc.id} ref={el => { cardRefs.current[calc.id] = el }} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+            <div key={calc.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">

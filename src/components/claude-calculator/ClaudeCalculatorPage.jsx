@@ -10,7 +10,7 @@ export function ClaudeCalculatorPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { saveCalculation } = useCalculations()
-  const { clients } = useClients()
+  const { clients, addClient } = useClients()
 
   const [selectedClient, setSelectedClient] = useState(null)
   const [clientSearch, setClientSearch] = useState('')
@@ -102,16 +102,34 @@ export function ClaudeCalculatorPage() {
 
     setSaving(true)
     try {
+      let clientId = selectedClient?.id || null
+
+      if (!selectedClient) {
+        const newClient = await addClient({
+          name,
+          phone: phone || null,
+          bank_names: [],
+          financing_companies: [],
+          added_by: null,
+          debt_amount: parseFloat(payoff) || 0,
+          commission_pct: 10,
+          payment_status: 'pending',
+          financing_status: 'pending',
+          notes: null,
+        })
+        clientId = newClient.id
+      }
+
       const saved = await saveCalculation({
-        client_id: selectedClient?.id || null,
+        client_id: clientId,
         client_name: name,
         client_phone: phone || null,
         calc_type: calcType,
         inputs: { salary, months, rate, payoff },
         result,
       })
-      setSavedCalc({ ...saved, payoff })
-      showToast('✓ تم حفظ الحسبة بنجاح')
+      setSavedCalc({ ...saved, payoff, isNew: !selectedClient })
+      showToast(selectedClient ? '✓ تم حفظ الحسبة' : '✓ تم حفظ الحسبة والعميل')
     } catch {
       showToast('حدث خطأ أثناء الحفظ')
     } finally {
@@ -151,6 +169,11 @@ export function ClaudeCalculatorPage() {
           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
           dir="rtl"
         />
+        {showDropdown && clientSearch.trim() && filteredClients.length === 0 && (
+          <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
+            لا توجد نتائج
+          </div>
+        )}
         {showDropdown && filteredClients.length > 0 && (
           <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl max-h-52 overflow-y-auto">
             {filteredClients.map(client => (
@@ -430,19 +453,19 @@ export function ClaudeCalculatorPage() {
 
       {/* Banner after save */}
       {savedCalc && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
-          <span className="text-sm text-blue-700 dark:text-blue-300">
-            ✓ تم حفظ الحسبة
-            {selectedClient ? <> — مرتبطة بـ <strong>{selectedClient.name}</strong></> : <> لـ <strong>{savedCalc.client_name}</strong></>}
+        <div className="flex items-center justify-between p-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+          <span className="text-sm text-green-700 dark:text-green-300">
+            {savedCalc.isNew
+              ? <>✓ تم حفظ الحسبة والعميل — <strong>{savedCalc.client_name}</strong></>
+              : <>✓ تم حفظ الحسبة — مرتبطة بـ <strong>{selectedClient?.name || savedCalc.client_name}</strong></>
+            }
           </span>
-          {!selectedClient && (
-            <button
-              onClick={() => navigate('/add-client', { state: { fromCalc: { name: savedCalc.client_name, phone: savedCalc.client_phone, debt_amount: savedCalc.inputs?.payoff || '' } } })}
-              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline mr-4"
-            >
-              ← إضافة كعميل
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/clients')}
+            className="text-sm font-semibold text-green-600 dark:text-green-400 hover:underline mr-4"
+          >
+            ← قائمة العملاء
+          </button>
         </div>
       )}
 
