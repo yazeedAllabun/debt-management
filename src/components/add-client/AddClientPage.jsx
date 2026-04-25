@@ -112,7 +112,7 @@ export function AddClientPage() {
     setSubmitStatus(null)
     try {
       await saveClient(data)
-      navigate('/calculator')
+      navigate('/claude-calculator', { state: { client: { name: data.name.trim(), phone: data.phone?.trim() || '' } } })
     } catch (err) {
       setErrorMsg(err.message)
       setSubmitStatus('error')
@@ -249,7 +249,7 @@ export function AddClientPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field label="إجراءات السداد">
               <select {...register('payment_status')} className={inputCls}>
-                <option value="pending">معلق</option>
+                <option value="pending">لم يتم السداد</option>
                 <option value="under_review">تحت الدراسة</option>
                 <option value="request_created">إنشاء طلب</option>
                 <option value="paid">تم السداد</option>
@@ -258,7 +258,7 @@ export function AddClientPage() {
 
             <Field label="إجراءات التمويل">
               <select {...register('financing_status')} className={inputCls}>
-                <option value="pending">معلق لدى البنك</option>
+                <option value="pending">بانتظار السداد</option>
                 <option value="under_review">تحت الدراسة</option>
                 <option value="request_created">إنشاء طلب</option>
                 <option value="approved">تم التمويل</option>

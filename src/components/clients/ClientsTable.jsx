@@ -47,10 +47,10 @@ export function ClientsTable({ clients, onDelete }) {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => navigate('/claude-calculator', { state: { client: { id: c.id, name: c.name, phone: c.phone } } })}
-                    className="p-1.5 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    title="احتسب للعميل"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                   >
-                    <Calculator size={15} />
+                    <Calculator size={13} />
+                    احتساب
                   </button>
                   <button
                     onClick={() => {
