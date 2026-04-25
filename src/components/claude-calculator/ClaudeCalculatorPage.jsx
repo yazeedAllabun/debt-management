@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { muhtasibCSS } from './muhtasibStyles.js'
 import { useCalculations } from '../../hooks/useCalculations'
@@ -8,6 +8,7 @@ import { useClients } from '../../hooks/useClients'
 export function ClaudeCalculatorPage() {
   const { theme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const { saveCalculation } = useCalculations()
   const { clients } = useClients()
 
@@ -17,6 +18,15 @@ export function ClaudeCalculatorPage() {
   const [savedCalc, setSavedCalc] = useState(null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+
+  // Auto-select client when navigated from ClientsTable
+  useEffect(() => {
+    const client = location.state?.client
+    if (client) {
+      setSelectedClient(client)
+      setClientSearch(client.name)
+    }
+  }, [])
 
   // Load CSS + JS
   useEffect(() => {

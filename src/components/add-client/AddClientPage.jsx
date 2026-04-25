@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
 import { calcProfit, formatCurrency } from '../../utils/formatters'
 import { MultiSelect } from '../ui/MultiSelect'
@@ -40,6 +40,7 @@ const inputCls =
 export function AddClientPage() {
   const { addClient } = useClients()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isOwner } = useOwnerSession()
   const { currentEmployee } = useEmployeeSession()
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -47,6 +48,8 @@ export function AddClientPage() {
   const [selectedBanks, setSelectedBanks] = useState([])
   const [selectedFinancing, setSelectedFinancing] = useState([])
   const [employees, setEmployees] = useState([])
+
+  const fromCalc = location.state?.fromCalc
 
   useEffect(() => {
     if (!isOwner) return
@@ -65,7 +68,9 @@ export function AddClientPage() {
       payment_status: 'pending',
       financing_status: 'pending',
       commission_pct: 10,
-      debt_amount: '',
+      name: fromCalc?.name || '',
+      phone: fromCalc?.phone || '',
+      debt_amount: fromCalc?.debt_amount || '',
     },
   })
 
@@ -120,6 +125,12 @@ export function AddClientPage() {
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">إضافة عميل جديد</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">يتم الحفظ في قاعدة البيانات</p>
       </div>
+
+      {fromCalc && (
+        <div className="mb-4 flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-xl text-sm">
+          ✓ تم استيراد البيانات من الحسبة — راجع الحقول قبل الحفظ
+        </div>
+      )}
 
       {submitStatus === 'success' && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl">
