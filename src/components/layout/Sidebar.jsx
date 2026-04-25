@@ -7,6 +7,7 @@ import {
   FileBarChart2,
   Calculator,
   BotMessageSquare,
+  ClipboardList,
   ShieldCheck,
   UsersRound,
 } from 'lucide-react'
@@ -18,6 +19,7 @@ const navItems = [
   { to: '/reports',           label: 'التقارير',      icon: FileBarChart2 },
   { to: '/calculator',        label: 'المحتسب',       icon: Calculator },
   { to: '/claude-calculator', label: 'محتسب كلاود',  icon: BotMessageSquare },
+  { to: '/calculations',      label: 'الحسبات',       icon: ClipboardList },
 ]
 
 export function Sidebar({ open, onClose }) {
