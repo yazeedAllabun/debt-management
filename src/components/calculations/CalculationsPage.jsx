@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, Calculator, User } from 'lucide-react'
+import { Trash2, Calculator, User, Download } from 'lucide-react'
+import html2canvas from 'html2canvas'
 import { useCalculations } from '../../hooks/useCalculations'
 
 export function CalculationsPage() {
@@ -9,6 +10,8 @@ export function CalculationsPage() {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [deleting, setDeleting] = useState(null)
+  const [downloading, setDownloading] = useState(null)
+  const cardRefs = useRef({})
 
   const filtered = calculations.filter(c => {
     const matchSearch = !search.trim() || c.client_name.includes(search) || (c.client_phone || '').includes(search)
@@ -20,6 +23,21 @@ export function CalculationsPage() {
     if (!confirm('حذف هذه الحسبة؟')) return
     setDeleting(id)
     try { await deleteCalculation(id) } finally { setDeleting(null) }
+  }
+
+  async function handleDownload(calc) {
+    const el = cardRefs.current[calc.id]
+    if (!el) return
+    setDownloading(calc.id)
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null })
+      const link = document.createElement('a')
+      link.download = `حسبة-${calc.client_name}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } finally {
+      setDownloading(null)
+    }
   }
 
   function formatDate(ts) {
@@ -74,7 +92,7 @@ export function CalculationsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(calc => (
-            <div key={calc.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+            <div key={calc.id} ref={el => { cardRefs.current[calc.id] = el }} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
@@ -125,13 +143,24 @@ export function CalculationsPage() {
               {/* Footer */}
               <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-700">
                 <span className="text-xs text-gray-400">{formatDate(calc.created_at)}</span>
-                <button
-                  onClick={() => handleDelete(calc.id)}
-                  disabled={deleting === calc.id}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleDownload(calc)}
+                    disabled={downloading === calc.id}
+                    className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="تحميل كصورة"
+                  >
+                    <Download size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(calc.id)}
+                    disabled={deleting === calc.id}
+                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="حذف الحسبة"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

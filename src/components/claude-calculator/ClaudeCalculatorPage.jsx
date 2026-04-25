@@ -46,19 +46,29 @@ export function ClaudeCalculatorPage() {
     }
   }, [])
 
-  // Fill client name/phone into DOM when client selected
+  // Fill client name/phone into DOM when client selected; make read-only
   useEffect(() => {
-    if (!selectedClient) return
-    const fill = (id, val) => {
+    const ids = ['p_name', 'p_mobile', 'f_name', 'f_mobile']
+    if (!selectedClient) {
+      ids.forEach(id => {
+        const el = document.getElementById(id)
+        if (!el) return
+        el.readOnly = false
+        el.style.opacity = ''
+        el.style.cursor = ''
+      })
+      return
+    }
+    const vals = { p_name: selectedClient.name, p_mobile: selectedClient.phone || '', f_name: selectedClient.name, f_mobile: selectedClient.phone || '' }
+    ids.forEach(id => {
       const el = document.getElementById(id)
       if (!el) return
-      el.value = val
+      el.value = vals[id]
+      el.readOnly = true
+      el.style.opacity = '0.7'
+      el.style.cursor = 'not-allowed'
       el.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-    fill('p_name', selectedClient.name)
-    fill('p_mobile', selectedClient.phone || '')
-    fill('f_name', selectedClient.name)
-    fill('f_mobile', selectedClient.phone || '')
+    })
   }, [selectedClient])
 
   function showToast(msg) {
@@ -156,8 +166,14 @@ export function ClaudeCalculatorPage() {
           </div>
         )}
         {selectedClient && (
-          <div className="mt-1.5 flex items-center gap-2 text-sm px-1">
+          <div className="mt-1.5 flex items-center gap-2 text-sm px-1 flex-wrap">
             <span className="text-blue-600 dark:text-blue-400">✓ مرتبط بـ: <strong>{selectedClient.name}</strong></span>
+            <button
+              onClick={() => navigate(`/edit-client/${selectedClient.id}`)}
+              className="text-xs text-blue-500 dark:text-blue-400 underline hover:text-blue-700"
+            >
+              تعديل ملف العميل
+            </button>
             <button onClick={handleClearClient} className="text-gray-400 hover:text-red-500 text-xs">✕ إلغاء</button>
           </div>
         )}

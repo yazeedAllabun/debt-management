@@ -252,4 +252,7 @@ export const muhtasibCSS = `
 /* Fade in */
 .muhtasib-root .calc-panel{animation:muhtasibFadeUp .3s ease}
 @keyframes muhtasibFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* Hidden internal hints */
+.muhtasib-root .salary-hint{display:none}
+.muhtasib-root .commit-pct-hint{display:none}
 `

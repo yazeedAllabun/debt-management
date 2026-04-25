@@ -44,7 +44,7 @@ function buildCommitCard(prefix, idx, opts, hintText){
       <input id="${id}" type="number" min="0" step="0.01" placeholder="المبلغ" value="0" inputmode="decimal"/>
       <select id="${tid}"></select>
     </div>
-    <div style="font-size:11px;color:var(--text2);margin-top:5px">
+    <div class="commit-pct-hint" style="font-size:11px;color:var(--text2);margin-top:5px">
       نسبة: <span id="${pid}">0%</span>
     </div>
     <div class="warn-msg" id="${wid}"></div>
