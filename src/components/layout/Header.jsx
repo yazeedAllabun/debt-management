@@ -1,9 +1,9 @@
-import { Sun, Moon, Menu, LogOut } from 'lucide-react'
+import { Sun, Moon, Menu, LogOut, HelpCircle } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import logoImg from '../../assets/logo-dark.png'
 
-export function Header({ onMenuClick }) {
+export function Header({ onMenuClick, onTour }) {
   const { theme, toggleTheme } = useTheme()
   const { currentEmployee, employeeLogout } = useEmployeeSession()
 
@@ -49,6 +49,18 @@ export function Header({ onMenuClick }) {
             </button>
           </div>
         )}
+
+        {/* أيقونة الجولة التعريفية */}
+        <button
+          onClick={onTour}
+          className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
+          title="الجولة التعريفية"
+        >
+          <HelpCircle size={20} />
+        </button>
+
+        {/* فراغ بين الأيقونتين */}
+        <div className="w-1" />
 
         {/* تبديل الوضع */}
         <button

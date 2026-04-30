@@ -5,7 +5,6 @@ import {
   Users,
   UserPlus,
   FileBarChart2,
-  Calculator,
   BotMessageSquare,
   ClipboardList,
   ShieldCheck,
@@ -13,13 +12,12 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/',                  label: 'الرئيسية',      icon: LayoutDashboard },
-  { to: '/clients',           label: 'العملاء',       icon: Users },
-  { to: '/add-client',        label: 'إضافة عميل',   icon: UserPlus },
-  { to: '/reports',           label: 'التقارير',      icon: FileBarChart2 },
-  { to: '/calculator',        label: 'المحتسب',       icon: Calculator },
-  { to: '/claude-calculator', label: 'محتسب كلاود',  icon: BotMessageSquare },
-  { to: '/calculations',      label: 'الحسبات',       icon: ClipboardList },
+  { to: '/',             label: 'الرئيسية',    icon: LayoutDashboard, tour: 'dashboard'    },
+  { to: '/clients',      label: 'العملاء',     icon: Users,           tour: 'clients'      },
+  { to: '/add-client',   label: 'إضافة عميل', icon: UserPlus,        tour: null           },
+  { to: '/reports',      label: 'التقارير',    icon: FileBarChart2,   tour: 'reports'      },
+  { to: '/muhtasib',     label: 'المحتسب',     icon: BotMessageSquare,tour: 'muhtasib'     },
+  { to: '/calculations', label: 'الحسبات',     icon: ClipboardList,   tour: 'calculations' },
 ]
 
 export function Sidebar({ open, onClose }) {
@@ -33,12 +31,13 @@ export function Sidebar({ open, onClose }) {
       ${open ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
     `}>
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon, tour }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             onClick={onClose}
+            {...(tour ? { 'data-tour': tour } : {})}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                 isActive

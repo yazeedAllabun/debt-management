@@ -134,7 +134,7 @@ export function ReportsPage() {
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
             <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} width={65} />
             <Tooltip
-              formatter={(v, name) => [v.toLocaleString('ar-SA'), name]}
+              formatter={(v, name) => [v.toLocaleString('ar-SA-u-nu-latn'), name]}
               contentStyle={{ borderRadius: 12, fontSize: 12 }}
             />
             <Legend />

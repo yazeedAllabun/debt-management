@@ -31,7 +31,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
       {payload.map(p => (
         <p key={p.name} style={{ color: p.fill }}>
-          {p.name}: {p.value.toLocaleString('ar-SA')}
+          {p.name}: {p.value.toLocaleString('ar-SA-u-nu-latn')}
         </p>
       ))}
     </div>

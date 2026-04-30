@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '../../hooks/useClients'
-import { calcProfit, formatCurrency } from '../../utils/formatters'
+import { calcProfit, formatCurrency, toEnDigits } from '../../utils/formatters'
 import { MultiSelect } from '../ui/MultiSelect'
 import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -112,7 +112,7 @@ export function AddClientPage() {
     setSubmitStatus(null)
     try {
       await saveClient(data)
-      navigate('/claude-calculator', { state: { client: { name: data.name.trim(), phone: data.phone?.trim() || '' } } })
+      navigate('/muhtasib', { state: { client: { name: data.name.trim(), phone: data.phone?.trim() || '' } } })
     } catch (err) {
       setErrorMsg(err.message)
       setSubmitStatus('error')
@@ -162,10 +162,12 @@ export function AddClientPage() {
               {...register('phone', {
                 required: 'رقم الجوال مطلوب',
                 pattern: { value: /^05\d{8}$/, message: 'رقم جوال غير صحيح (05xxxxxxxx)' },
+                setValueAs: toEnDigits,
               })}
               className={inputCls}
               placeholder="05xxxxxxxx"
               maxLength={10}
+              onInput={e => { e.target.value = toEnDigits(e.target.value) }}
             />
           </Field>
         </div>
@@ -211,10 +213,12 @@ export function AddClientPage() {
               {...register('debt_amount', {
                 required: 'المبلغ مطلوب',
                 min: { value: 1, message: 'يجب أن يكون أكبر من صفر' },
+                setValueAs: v => parseFloat(toEnDigits(v)) || '',
               })}
               className={inputCls}
               placeholder="0"
               step="0.01"
+              onInput={e => { e.target.value = toEnDigits(e.target.value) }}
             />
           </Field>
 

@@ -1,4 +1,17 @@
 // ============================================================
+// Arabic-to-Latin digit conversion
+// ============================================================
+(function(){
+  function toEn(s){ return s.replace(/[٠-٩]/g, d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)) }
+  document.addEventListener('input', function(e){
+    if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){
+      const v=toEn(e.target.value)
+      if(v!==e.target.value){ const p=e.target.selectionStart; e.target.value=v; e.target.setSelectionRange(p,p) }
+    }
+  }, true)
+})();
+
+// ============================================================
 // TABS
 // ============================================================
 document.getElementById('tab1').addEventListener('click',()=>{

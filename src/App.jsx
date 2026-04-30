@@ -8,7 +8,6 @@ import { ClientsPage } from './components/clients/ClientsPage'
 import { AddClientPage } from './components/add-client/AddClientPage'
 import { ReportsPage } from './components/reports/ReportsPage'
 import { OwnerPage } from './components/owner/OwnerPage'
-import { CalculatorPage } from './components/calculator/CalculatorPage'
 import { ClaudeCalculatorPage } from './components/claude-calculator/ClaudeCalculatorPage'
 import { CalculationsPage } from './components/calculations/CalculationsPage'
 import { EmployeesPage } from './components/employees/EmployeesPage'
@@ -27,8 +26,7 @@ export default function App() {
               <Route path="add-client" element={<AddClientPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="owner" element={<OwnerPage />} />
-              <Route path="calculator" element={<CalculatorPage />} />
-              <Route path="claude-calculator" element={<ClaudeCalculatorPage />} />
+              <Route path="muhtasib" element={<ClaudeCalculatorPage />} />
               <Route path="calculations" element={<CalculationsPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="edit-client/:id" element={<EditClientPage />} />

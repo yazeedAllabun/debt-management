@@ -8,7 +8,7 @@ import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import { MultiSelect } from '../ui/MultiSelect'
 import { Badge } from '../ui/Badge'
-import { calcProfit, formatCurrency } from '../../utils/formatters'
+import { calcProfit, formatCurrency, toEnDigits } from '../../utils/formatters'
 
 const BANKS = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
@@ -158,9 +158,11 @@ export function EditClientPage() {
               {...register('phone', {
                 required: 'رقم الجوال مطلوب',
                 pattern: { value: /^05\d{8}$/, message: 'رقم جوال غير صحيح (05xxxxxxxx)' },
+                setValueAs: toEnDigits,
               })}
               className={inputCls}
               maxLength={10}
+              onInput={e => { e.target.value = toEnDigits(e.target.value) }}
             />
           </Field>
         </div>
@@ -178,9 +180,14 @@ export function EditClientPage() {
           <Field label="مبلغ التسوية (ر.س) *" error={errors.debt_amount?.message}>
             <input
               type="number"
-              {...register('debt_amount', { required: 'المبلغ مطلوب', min: { value: 1, message: 'يجب أن يكون أكبر من صفر' } })}
+              {...register('debt_amount', {
+                required: 'المبلغ مطلوب',
+                min: { value: 1, message: 'يجب أن يكون أكبر من صفر' },
+                setValueAs: v => parseFloat(toEnDigits(v)) || '',
+              })}
               className={inputCls}
               step="0.01"
+              onInput={e => { e.target.value = toEnDigits(e.target.value) }}
             />
           </Field>
           <Field label="نسبة العمولة % *" error={errors.commission_pct?.message}>

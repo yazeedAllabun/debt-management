@@ -4,42 +4,51 @@ import { Trash2, Calculator, User, Download } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { useCalculations } from '../../hooks/useCalculations'
 
+const TAJAWAL_URL = 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap'
+
 function buildPrintNode(calc, dateStr) {
   const typeLabel = calc.calc_type === 'personal' ? 'التمويل الشخصي' : 'شركات التمويل'
+  const tdBase = 'padding:10px 14px;border-bottom:1px solid #e5e7eb;vertical-align:middle;line-height:1.6;box-sizing:border-box'
   const rows = Object.entries(calc.result || {})
-    .map(([k, v]) => `<tr><td style="padding:8px 14px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:14px">${k}</td><td style="padding:8px 14px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#1d4ed8;font-size:14px;text-align:left">${v}</td></tr>`)
+    .map(([k, v]) => `<tr>
+      <td style="${tdBase};color:#374151;font-size:14px;text-align:right;width:60%">${k}</td>
+      <td style="${tdBase};font-weight:700;color:#1d4ed8;font-size:14px;text-align:right;width:40%">${v}</td>
+    </tr>`)
     .join('')
 
+  const fmtNum = n => Number(n).toLocaleString('ar-SA-u-nu-latn')
   const inputRows = [
-    calc.inputs?.salary ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">الراتب: ${Number(calc.inputs.salary).toLocaleString('ar-SA')} ر.س</span>` : '',
-    calc.inputs?.months ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">المدة: ${calc.inputs.months} شهر</span>` : '',
-    calc.inputs?.rate   ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">الفائدة: ${calc.inputs.rate}%</span>` : '',
-    calc.inputs?.payoff && Number(calc.inputs.payoff) > 0 ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280">مبلغ السداد: ${Number(calc.inputs.payoff).toLocaleString('ar-SA')} ر.س</span>` : '',
+    calc.inputs?.salary ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280;line-height:1.8">الراتب: ${fmtNum(calc.inputs.salary)} ر.س</span>` : '',
+    calc.inputs?.months ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280;line-height:1.8">المدة: ${calc.inputs.months} شهر</span>` : '',
+    calc.inputs?.rate   ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280;line-height:1.8">الفائدة: ${calc.inputs.rate}%</span>` : '',
+    calc.inputs?.payoff && Number(calc.inputs.payoff) > 0 ? `<span style="background:#f3f4f6;border-radius:6px;padding:4px 10px;font-size:12px;color:#6b7280;line-height:1.8">مبلغ السداد: ${fmtNum(calc.inputs.payoff)} ر.س</span>` : '',
   ].filter(Boolean).join(' ')
 
   const node = document.createElement('div')
-  node.style.cssText = 'position:fixed;left:-9999px;top:0;direction:rtl;font-family:Tajawal,Arial,sans-serif;background:#fff;padding:32px;width:520px;border-radius:16px'
+  node.style.cssText = 'position:fixed;left:-9999px;top:0;direction:rtl;font-family:Tajawal,Arial,sans-serif;background:#ffffff;padding:32px;width:540px;border-radius:16px;line-height:1.6'
   node.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e5e7eb">
+    <link rel="stylesheet" href="${TAJAWAL_URL}" />
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e5e7eb;gap:12px">
       <div>
-        <div style="font-size:20px;font-weight:800;color:#1e293b">حسبة ${typeLabel}</div>
+        <div style="font-size:20px;font-weight:800;color:#1e293b;line-height:1.4">حسبة ${typeLabel}</div>
         <div style="font-size:13px;color:#94a3b8;margin-top:4px">${dateStr}</div>
       </div>
-      <span style="background:${calc.calc_type === 'personal' ? '#eef2ff' : '#ecfdf5'};color:${calc.calc_type === 'personal' ? '#4f46e5' : '#059669'};font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px">${typeLabel}</span>
+      <span style="background:${calc.calc_type === 'personal' ? '#eef2ff' : '#ecfdf5'};color:${calc.calc_type === 'personal' ? '#4f46e5' : '#059669'};font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap">${typeLabel}</span>
     </div>
     <div style="margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700;color:#1e293b">${calc.client_name}</div>
+      <div style="font-size:16px;font-weight:700;color:#1e293b;line-height:1.5">${calc.client_name}</div>
       ${calc.client_phone ? `<div style="font-size:13px;color:#94a3b8;margin-top:2px">${calc.client_phone}</div>` : ''}
     </div>
-    ${inputRows ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${inputRows}</div>` : ''}
-    <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
+    ${inputRows ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center">${inputRows}</div>` : ''}
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;table-layout:fixed">
       <thead><tr style="background:#f8fafc">
-        <th style="padding:10px 14px;text-align:right;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb">البند</th>
-        <th style="padding:10px 14px;text-align:left;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb">القيمة</th>
+        <th style="padding:10px 14px;text-align:right;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:middle;width:60%">البند</th>
+        <th style="padding:10px 14px;text-align:right;font-size:13px;color:#64748b;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:middle;width:40%">القيمة</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div style="margin-top:16px;font-size:11px;color:#cbd5e1;text-align:center">حسبة مبدئية — يرجى التحقق مع الجهة التمويلية</div>
+    <div style="margin-top:14px;font-size:11px;color:#cbd5e1;text-align:center">حسبة مبدئية — يرجى التحقق مع الجهة التمويلية</div>
+    <div style="margin-top:6px;font-size:11px;color:#94a3b8;text-align:center">© جميع الحقوق محفوظة لمنصة فك</div>
   `
   return node
 }
@@ -69,7 +78,8 @@ export function CalculationsPage() {
     const node = buildPrintNode(calc, formatDate(calc.created_at))
     document.body.appendChild(node)
     try {
-      const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      await document.fonts.ready
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' })
       const link = document.createElement('a')
       link.download = `حسبة-${calc.client_name}.png`
       link.href = canvas.toDataURL('image/png')
@@ -92,7 +102,7 @@ export function CalculationsPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{calculations.length} حسبة محفوظة</p>
         </div>
         <button
-          onClick={() => navigate('/claude-calculator')}
+          onClick={() => navigate('/muhtasib')}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
         >
           <Calculator size={16} />
@@ -175,7 +185,7 @@ export function CalculationsPage() {
 
               {/* Inputs summary */}
               <div className="flex gap-3 text-xs text-gray-400 flex-wrap">
-                {calc.inputs?.salary && <span>الراتب: {Number(calc.inputs.salary).toLocaleString('ar-SA')} ر</span>}
+                {calc.inputs?.salary && <span>الراتب: {Number(calc.inputs.salary).toLocaleString('ar-SA-u-nu-latn')} ر</span>}
                 {calc.inputs?.months && <span>المدة: {calc.inputs.months} شهر</span>}
                 {calc.inputs?.rate && <span>الفائدة: {calc.inputs.rate}%</span>}
               </div>
