@@ -23,6 +23,15 @@ const steps = [
     },
   },
   {
+    element: '[data-tour="reports"]',
+    popover: {
+      title: 'التقارير',
+      description: 'تقارير مالية شهرية وسنوية مع رسوم بيانية وإمكانية التصدير.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="muhtasib"]',
     popover: {
       title: 'المحتسب',
@@ -40,19 +49,11 @@ const steps = [
       align: 'start',
     },
   },
-  {
-    element: '[data-tour="reports"]',
-    popover: {
-      title: 'التقارير',
-      description: 'تقارير مالية شهرية وسنوية مع رسوم بيانية وإمكانية التصدير.',
-      side: 'left',
-      align: 'start',
-    },
-  },
 ]
 
 function createDriver(onDone) {
-  return driver({
+  let drvr
+  drvr = driver({
     animate: true,
     overlayOpacity: 0.55,
     showProgress: true,
@@ -65,18 +66,18 @@ function createDriver(onDone) {
     popoverClass: 'rakan-tour-popover',
     onDestroyStarted: () => {
       onDone()
+      drvr.destroy()
     },
     steps,
   })
+  return drvr
 }
 
 export function runTour() {
   if (localStorage.getItem(TOUR_KEY)) return
-  const drvr = createDriver(() => localStorage.setItem(TOUR_KEY, '1'))
-  drvr.drive()
+  createDriver(() => localStorage.setItem(TOUR_KEY, '1')).drive()
 }
 
 export function forceTour() {
-  const drvr = createDriver(() => localStorage.setItem(TOUR_KEY, '1'))
-  drvr.drive()
+  createDriver(() => localStorage.setItem(TOUR_KEY, '1')).drive()
 }
