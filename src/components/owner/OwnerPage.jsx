@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X, Key } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -158,10 +158,15 @@ export function OwnerPage() {
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
-  const { employees, loading: empsLoading, addEmployee, deleteEmployee, updateEmployee } = useEmployees()
-  const [editingId, setEditingId]   = useState(null)
-  const [editRole, setEditRole]     = useState('')
-  const [editPerms, setEditPerms]   = useState([])
+  const { employees, loading: empsLoading, addEmployee, deleteEmployee, updateEmployee, updateEmployeePassword } = useEmployees()
+  const [editingId, setEditingId]     = useState(null)
+  const [editRole, setEditRole]       = useState('')
+  const [editPerms, setEditPerms]     = useState([])
+  const [passId, setPassId]           = useState(null)
+  const [newEmpPass, setNewEmpPass]   = useState('')
+  const [confEmpPass, setConfEmpPass] = useState('')
+  const [showEmpPass, setShowEmpPass] = useState(false)
+  const [passError, setPassError]     = useState('')
 
   useEffect(() => {
     fetchPin().then(p => {
@@ -582,19 +587,34 @@ export function OwnerPage() {
                     <div className="flex gap-1 shrink-0">
                       <button
                         onClick={() => {
-                          if (editingId === emp.id) { setEditingId(null); return }
-                          setEditingId(emp.id)
-                          setEditRole(emp.role)
-                          setEditPerms(emp.permissions || [])
+                          const opening = passId !== emp.id
+                          setPassId(opening ? emp.id : null)
+                          setNewEmpPass(''); setConfEmpPass(''); setPassError('')
+                          if (opening) setEditingId(null)
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          passId === emp.id
+                            ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'
+                            : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                        }`}
+                        title="تغيير كلمة المرور"
+                      >
+                        <Key size={15} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const opening = editingId !== emp.id
+                          setEditingId(opening ? emp.id : null)
+                          if (opening) { setEditRole(emp.role); setEditPerms(emp.permissions || []); setPassId(null) }
                         }}
                         className={`p-1.5 rounded-lg transition-colors ${
                           editingId === emp.id
                             ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30'
                             : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                         }`}
-                        title="تعديل"
+                        title="تعديل الصلاحيات"
                       >
-                        {editingId === emp.id ? <X size={15} /> : <Pencil size={15} />}
+                        <Pencil size={15} />
                       </button>
                       <button onClick={() => handleDeleteEmployee(emp.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -604,6 +624,54 @@ export function OwnerPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* ── نموذج تغيير كلمة مرور الموظف ── */}
+                  {passId === emp.id && (
+                    <div className="border-t border-gray-100 dark:border-gray-700 bg-amber-50/60 dark:bg-amber-900/10 p-4 space-y-3">
+                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                        تعيين كلمة مرور جديدة لـ {emp.name}
+                      </p>
+                      {passError && <p className="text-xs text-red-500">{passError}</p>}
+                      <div className="relative">
+                        <input
+                          type={showEmpPass ? 'text' : 'password'}
+                          value={newEmpPass}
+                          onChange={e => setNewEmpPass(e.target.value)}
+                          className={inputCls}
+                          placeholder="كلمة المرور الجديدة"
+                        />
+                        <button onClick={() => setShowEmpPass(v => !v)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                          {showEmpPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
+                      <input
+                        type="password"
+                        value={confEmpPass}
+                        onChange={e => setConfEmpPass(e.target.value)}
+                        className={inputCls}
+                        placeholder="تأكيد كلمة المرور"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (newEmpPass.length < 4) return setPassError('4 أحرف على الأقل')
+                            if (newEmpPass !== confEmpPass) return setPassError('كلمتا المرور غير متطابقتين')
+                            try {
+                              await updateEmployeePassword(emp.id, btoa(newEmpPass))
+                              setPassId(null); setNewEmpPass(''); setConfEmpPass(''); setPassError('')
+                            } catch (e) { setPassError(e.message) }
+                          }}
+                          className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-xl transition-colors">
+                          حفظ كلمة المرور
+                        </button>
+                        <button onClick={() => { setPassId(null); setPassError('') }}
+                          className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ── نموذج التعديل (inline) ── */}
                   {editingId === emp.id && (
