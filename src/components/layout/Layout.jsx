@@ -20,7 +20,7 @@ export function Layout() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      setTimeout(runTour, 800)
+      setTimeout(() => runTour(() => setSidebarOpen(true)), 800)
     }
   }, [isLoggedIn])
 
@@ -30,7 +30,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header onMenuClick={() => setSidebarOpen(o => !o)} onTour={forceTour} />
+      <Header onMenuClick={() => setSidebarOpen(o => !o)} onTour={() => forceTour(() => setSidebarOpen(true))} />
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && (

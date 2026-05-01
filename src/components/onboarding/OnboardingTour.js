@@ -3,7 +3,7 @@ import 'driver.js/dist/driver.css'
 
 const TOUR_KEY = 'rakan_tour_done'
 
-const steps = [
+const mainSteps = [
   {
     element: '[data-tour="dashboard"]',
     popover: {
@@ -51,8 +51,28 @@ const steps = [
   },
 ]
 
-function createDriver(onDone) {
+function createDriver(onDone, openSidebar) {
+  const isMobile = window.innerWidth < 768
   let drvr
+
+  const steps = isMobile ? [
+    {
+      element: '[data-tour="menu-toggle"]',
+      popover: {
+        title: 'افتح القائمة أولاً',
+        description: 'اضغط "التالي" وسيتم فتح القائمة الجانبية تلقائياً للبدء بالجولة.',
+        side: 'bottom',
+        align: 'start',
+        onNextClick: () => {
+          if (openSidebar) openSidebar()
+          // انتظر انتهاء انيميشن الشريط الجانبي ثم انتقل
+          setTimeout(() => drvr.moveNext(), 350)
+        },
+      },
+    },
+    ...mainSteps,
+  ] : mainSteps
+
   drvr = driver({
     animate: true,
     overlayOpacity: 0.55,
@@ -73,11 +93,11 @@ function createDriver(onDone) {
   return drvr
 }
 
-export function runTour() {
+export function runTour(openSidebar) {
   if (localStorage.getItem(TOUR_KEY)) return
-  createDriver(() => localStorage.setItem(TOUR_KEY, '1')).drive()
+  createDriver(() => localStorage.setItem(TOUR_KEY, '1'), openSidebar).drive()
 }
 
-export function forceTour() {
-  createDriver(() => localStorage.setItem(TOUR_KEY, '1')).drive()
+export function forceTour(openSidebar) {
+  createDriver(() => localStorage.setItem(TOUR_KEY, '1'), openSidebar).drive()
 }

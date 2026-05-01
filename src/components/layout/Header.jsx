@@ -14,6 +14,7 @@ export function Header({ onMenuClick, onTour }) {
       {/* Right side: Hamburger (mobile) + Logo + Company Name */}
       <div className="flex items-center gap-3">
         <button
+          data-tour="menu-toggle"
           onClick={onMenuClick}
           className="md:hidden p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
         >
