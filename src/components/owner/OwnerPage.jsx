@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -44,6 +44,15 @@ const fetchSecurityData = async () => {
     { q: m.owner_security_q2, a: m.owner_security_a2 },
     { q: m.owner_security_q3, a: m.owner_security_a3 },
   ]
+}
+
+const randomQs = () => {
+  const idx = [...Array(QUESTIONS.length).keys()]
+  for (let i = idx.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]]
+  }
+  return [0, 1, 2].map(i => ({ q: QUESTIONS[idx[i]], a: '' }))
 }
 
 const saveSecurityData = async (pairs) => {
@@ -142,11 +151,8 @@ export function OwnerPage() {
   const [showForm, setShowForm]     = useState(false)
   const [saving, setSaving]         = useState(false)
 
-  const [securityPairs, setSecurityPairs] = useState([
-    { q: QUESTIONS[0], a: '' },
-    { q: QUESTIONS[1], a: '' },
-    { q: QUESTIONS[2], a: '' },
-  ])
+  const [securityPairs, setSecurityPairs] = useState(randomQs)
+  const [setupQSource, setSetupQSource]   = useState('setup')
   const [forgotQs, setForgotQs]          = useState(null)
   const [forgotAnswers, setForgotAnswers] = useState(['', '', ''])
 
@@ -247,7 +253,9 @@ export function OwnerPage() {
         </div>
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 2 — اختر 3 أسئلة مختلفة وأجب عنها</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {setupQSource === 'dashboard' ? 'تحديث أسئلة الأمان' : 'الخطوة 2 من 2'} — اختر 3 أسئلة مختلفة وأجب عنها
+          </p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
         <div className="space-y-4">
@@ -279,12 +287,16 @@ export function OwnerPage() {
             if (new Set(securityPairs.map(p => p.q)).size < 3) return setError('يرجى اختيار 3 أسئلة مختلفة')
             await saveSecurityData(securityPairs)
             setError('')
-            await ownerLogin()
-            setStep('dashboard')
+            if (setupQSource === 'dashboard') {
+              setStep('dashboard')
+            } else {
+              await ownerLogin()
+              setStep('dashboard')
+            }
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-            حفظ وتسجيل الدخول
+            {setupQSource === 'dashboard' ? 'حفظ الأسئلة' : 'حفظ وتسجيل الدخول'}
           </button>
-          <button onClick={() => { setStep('setup'); setError('') }}
+          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setup'); setError('') }}
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
             رجوع
           </button>
@@ -467,6 +479,10 @@ export function OwnerPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => { setSetupQSource('dashboard'); setSecurityPairs(randomQs()); setError(''); setStep('setupQ') }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
+            <HelpCircle size={14} /> أسئلة الأمان
+          </button>
           <button onClick={() => { setStep('change'); setPin(''); setError('') }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
             <KeyRound size={14} /> تغيير كلمة المرور
