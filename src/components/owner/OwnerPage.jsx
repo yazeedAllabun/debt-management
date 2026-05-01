@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, Copy, Check } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -53,20 +53,6 @@ const saveSecurityData = async (pairs) => {
     rows.push({ key: `owner_security_a${i+1}`, value: btoa(p.a.trim().toLowerCase()) })
   })
   await supabase.from('settings').upsert(rows)
-}
-
-const generateCode = () => {
-  const seg = () => Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `${seg()}-${seg()}-${seg()}-${seg()}`
-}
-
-const fetchRecoveryCode = async () => {
-  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_recovery_code').single()
-  return data?.value ? atob(data.value) : null
-}
-
-const saveRecoveryCode = async (code) => {
-  await supabase.from('settings').upsert({ key: 'owner_recovery_code', value: btoa(code) })
 }
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
@@ -156,18 +142,13 @@ export function OwnerPage() {
   const [showForm, setShowForm]     = useState(false)
   const [saving, setSaving]         = useState(false)
 
-  /* Forgot-password flow state */
   const [securityPairs, setSecurityPairs] = useState([
     { q: QUESTIONS[0], a: '' },
     { q: QUESTIONS[1], a: '' },
     { q: QUESTIONS[2], a: '' },
   ])
-  const [generatedCode, setGeneratedCode] = useState('')
-  const [forgotQs, setForgotQs]           = useState(null)
-  const [forgotAnswers, setForgotAnswers]  = useState(['', '', ''])
-  const [wrongAttempts, setWrongAttempts]  = useState(0)
-  const [recoveryInput, setRecoveryInput]  = useState('')
-  const [codeCopied, setCodeCopied]        = useState(false)
+  const [forgotQs, setForgotQs]          = useState(null)
+  const [forgotAnswers, setForgotAnswers] = useState(['', '', ''])
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
@@ -176,9 +157,9 @@ export function OwnerPage() {
   useEffect(() => {
     fetchPin().then(p => {
       setStoredPin(p)
-      if (!p)         setStep('setup')
+      if (!p)           setStep('setup')
       else if (isOwner) setStep('dashboard')
-      else            setStep('login')
+      else              setStep('login')
     })
   }, [isOwner])
 
@@ -197,21 +178,13 @@ export function OwnerPage() {
   const goToForgot = async () => {
     setError('')
     setForgotAnswers(['', '', ''])
-    setWrongAttempts(0)
     const data = await fetchSecurityData()
     if (!data) {
-      setForgotQs(null)
-      setStep('forgotCode')
-    } else {
-      setForgotQs(data)
-      setStep('forgot')
+      setError('لم يتم إعداد أسئلة الأمان بعد')
+      return
     }
-  }
-
-  const copyCode = () => {
-    navigator.clipboard.writeText(generatedCode)
-    setCodeCopied(true)
-    setTimeout(() => setCodeCopied(false), 2000)
+    setForgotQs(data)
+    setStep('forgot')
   }
 
   /* ── LOADING ── */
@@ -225,22 +198,17 @@ export function OwnerPage() {
   if (step === 'setup') return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
-        <div className="flex justify-center gap-2 mb-1">
-          {['كلمة المرور', 'أسئلة الأمان', 'رمز الاستعادة'].map((label, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                i === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-              }`}>{i + 1}</div>
-              {i < 2 && <div className="w-8 h-0.5 bg-gray-200 dark:bg-gray-700" />}
-            </div>
-          ))}
+        <div className="flex justify-center items-center gap-2 mb-1">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">1</div>
+          <div className="w-12 h-0.5 bg-gray-200 dark:bg-gray-700" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-400">2</div>
         </div>
         <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto">
           <KeyRound size={26} className="text-blue-600 dark:text-blue-400" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد كلمة مرور المالك</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 3</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 2</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
@@ -272,19 +240,14 @@ export function OwnerPage() {
   if (step === 'setupQ') return (
     <div className="max-w-md mx-auto mt-10">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 space-y-5">
-        <div className="flex justify-center gap-2">
-          {['كلمة المرور', 'أسئلة الأمان', 'رمز الاستعادة'].map((label, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                i === 1 ? 'bg-blue-600 text-white' : i === 0 ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-              }`}>{i === 0 ? '✓' : i + 1}</div>
-              {i < 2 && <div className={`w-8 h-0.5 ${i === 0 ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`} />}
-            </div>
-          ))}
+        <div className="flex justify-center items-center gap-2">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">✓</div>
+          <div className="w-12 h-0.5 bg-green-400" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">2</div>
         </div>
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 3 — اختر 3 أسئلة مختلفة وأجب عنها</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 2 — اختر 3 أسئلة مختلفة وأجب عنها</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
         <div className="space-y-4">
@@ -315,69 +278,17 @@ export function OwnerPage() {
             if (securityPairs.some(p => !p.a.trim())) return setError('يرجى الإجابة على جميع الأسئلة')
             if (new Set(securityPairs.map(p => p.q)).size < 3) return setError('يرجى اختيار 3 أسئلة مختلفة')
             await saveSecurityData(securityPairs)
-            const code = generateCode()
-            await saveRecoveryCode(code)
-            setGeneratedCode(code)
             setError('')
-            setStep('setupCode')
+            await ownerLogin()
+            setStep('dashboard')
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-            التالي ←
+            حفظ وتسجيل الدخول
           </button>
           <button onClick={() => { setStep('setup'); setError('') }}
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
             رجوع
           </button>
         </div>
-      </div>
-    </div>
-  )
-
-  /* ── SETUP CODE / VIEW NEW CODE — Show recovery code ── */
-  if (step === 'setupCode' || step === 'viewNewCode') return (
-    <div className="max-w-sm mx-auto mt-16">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
-        {step === 'setupCode' && (
-          <div className="flex justify-center gap-2">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  i < 2 ? 'bg-green-500 text-white' : 'bg-blue-600 text-white'
-                }`}>{i < 2 ? '✓' : '3'}</div>
-                {i < 2 && <div className="w-8 h-0.5 bg-green-400" />}
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center mx-auto">
-          <KeyRound size={26} className="text-amber-600 dark:text-amber-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز الاستعادة</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {step === 'setupCode' ? 'الخطوة 3 من 3 — ' : ''}احفظ هذا الرمز في مكان آمن
-          </p>
-        </div>
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
-          <p className="text-xs text-amber-700 dark:text-amber-400">لن يظهر هذا الرمز مرة أخرى. يستخدم للوصول في حال نسيت كلمة المرور.</p>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-600">
-          <p className="font-mono text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-widest select-all">{generatedCode}</p>
-        </div>
-        <button onClick={copyCode}
-          className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-colors">
-          {codeCopied ? <><Check size={14} className="text-green-500" /> تم النسخ</> : <><Copy size={14} /> نسخ الرمز</>}
-        </button>
-        <button onClick={async () => {
-          setCodeCopied(false)
-          if (step === 'setupCode') {
-            await ownerLogin()
-            setStep('dashboard')
-          } else {
-            setStep('resetPin')
-          }
-        }} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors">
-          تم الحفظ ✓
-        </button>
       </div>
     </div>
   )
@@ -429,15 +340,10 @@ export function OwnerPage() {
     <div className="max-w-md mx-auto mt-10">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 space-y-5">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أجب على الأسئلة لاستعادة الوصول</p>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">استعادة كلمة المرور</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أجب على أسئلة الأمان لتعيين كلمة مرور جديدة</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
-        {wrongAttempts >= 2 && (
-          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3 text-sm text-orange-600 dark:text-orange-400 text-center">
-            محاولات خاطئة متعددة — يمكنك استخدام رمز الاستعادة
-          </div>
-        )}
         <div className="space-y-4">
           {forgotQs?.map((pair, i) => (
             <div key={i} className="space-y-1.5">
@@ -461,15 +367,10 @@ export function OwnerPage() {
               setError('')
               setStep('resetPin')
             } else {
-              setWrongAttempts(a => a + 1)
               setError('إجابة واحدة أو أكثر غير صحيحة، حاول مرة أخرى')
             }
           }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             تحقق
-          </button>
-          <button onClick={() => { setError(''); setStep('forgotCode') }}
-            className="w-full py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline">
-            استخدم رمز الاستعادة بدلاً من ذلك
           </button>
           <button onClick={() => { setError(''); setStep('login') }}
             className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
@@ -480,44 +381,7 @@ export function OwnerPage() {
     </div>
   )
 
-  /* ── FORGOT CODE — Enter recovery code ── */
-  if (step === 'forgotCode') return (
-    <div className="max-w-sm mx-auto mt-16">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
-        <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center mx-auto">
-          <KeyRound size={26} className="text-amber-600 dark:text-amber-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز الاستعادة</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أدخل الرمز الذي حصلت عليه عند إعداد حسابك</p>
-        </div>
-        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
-        <input type="text" value={recoveryInput}
-          onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
-          className={`${inputCls} text-center font-mono tracking-widest`}
-          placeholder="XXXX-XXXX-XXXX-XXXX" />
-        <button onClick={async () => {
-          const stored = await fetchRecoveryCode()
-          if (!stored) return setError('لا يوجد رمز استعادة محفوظ')
-          if (recoveryInput.trim() !== stored) return setError('الرمز غير صحيح')
-          const newCode = generateCode()
-          await saveRecoveryCode(newCode)
-          setGeneratedCode(newCode)
-          setRecoveryInput('')
-          setError('')
-          setStep('viewNewCode')
-        }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-          تحقق
-        </button>
-        <button onClick={() => { setError(''); setStep(forgotQs ? 'forgot' : 'login') }}
-          className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
-          رجوع
-        </button>
-      </div>
-    </div>
-  )
-
-  /* ── RESET PIN — Enter new password ── */
+  /* ── RESET PIN ── */
   if (step === 'resetPin') return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
@@ -526,7 +390,7 @@ export function OwnerPage() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">تعيين كلمة مرور جديدة</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم التحقق بنجاح</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم التحقق من أسئلة الأمان</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
