@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -158,7 +158,10 @@ export function OwnerPage() {
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
-  const { employees, loading: empsLoading, addEmployee, deleteEmployee } = useEmployees()
+  const { employees, loading: empsLoading, addEmployee, deleteEmployee, updateEmployee } = useEmployees()
+  const [editingId, setEditingId]   = useState(null)
+  const [editRole, setEditRole]     = useState('')
+  const [editPerms, setEditPerms]   = useState([])
 
   useEffect(() => {
     fetchPin().then(p => {
@@ -557,27 +560,99 @@ export function OwnerPage() {
           ) : (
             <div className="space-y-3">
               {employees.map(emp => (
-                <div key={emp.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">{emp.name}</p>
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{emp.role}</span>
-                      {emp.password
-                        ? <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">كلمة مرور مُعيَّنة</span>
-                        : <span className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">لم يُعيَّن كلمة مرور</span>
-                      }
+                <div key={emp.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  {/* ── بيانات الموظف ── */}
+                  <div className="p-4 flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-800 dark:text-gray-100">{emp.name}</p>
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{emp.role}</span>
+                        {emp.password
+                          ? <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">كلمة مرور مُعيَّنة</span>
+                          : <span className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">لم يُعيَّن كلمة مرور</span>
+                        }
+                      </div>
+                      {emp.phone && <p className="text-xs text-gray-400 mt-0.5">{emp.phone}</p>}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {ALL_PERMISSIONS.filter(p => emp.permissions?.includes(p.key)).map(p => (
+                          <span key={p.key} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{p.label}</span>
+                        ))}
+                      </div>
                     </div>
-                    {emp.phone && <p className="text-xs text-gray-400 mt-0.5">{emp.phone}</p>}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {ALL_PERMISSIONS.filter(p => emp.permissions?.includes(p.key)).map(p => (
-                        <span key={p.key} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{p.label}</span>
-                      ))}
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        onClick={() => {
+                          if (editingId === emp.id) { setEditingId(null); return }
+                          setEditingId(emp.id)
+                          setEditRole(emp.role)
+                          setEditPerms(emp.permissions || [])
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          editingId === emp.id
+                            ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                            : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        }`}
+                        title="تعديل"
+                      >
+                        {editingId === emp.id ? <X size={15} /> : <Pencil size={15} />}
+                      </button>
+                      <button onClick={() => handleDeleteEmployee(emp.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="حذف"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <button onClick={() => handleDeleteEmployee(emp.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                    <Trash2 size={15} />
-                  </button>
+
+                  {/* ── نموذج التعديل (inline) ── */}
+                  {editingId === emp.id && (
+                    <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4 space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">المسمى الوظيفي</p>
+                        <select value={editRole} onChange={e => setEditRole(e.target.value)} className={inputCls}>
+                          <option>موظف</option>
+                          <option>مشرف</option>
+                          <option>محاسب</option>
+                          <option>مدير</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">الصلاحيات</p>
+                        <div className="flex flex-wrap gap-2">
+                          {ALL_PERMISSIONS.map(p => (
+                            <button key={p.key} type="button"
+                              onClick={() => setEditPerms(prev =>
+                                prev.includes(p.key) ? prev.filter(k => k !== p.key) : [...prev, p.key]
+                              )}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                editPerms.includes(p.key)
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                              }`}>
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateEmployee(emp.id, { role: editRole, permissions: editPerms })
+                              setEditingId(null)
+                            } catch (e) { setError(e.message) }
+                          }}
+                          className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
+                          حفظ التعديلات
+                        </button>
+                        <button onClick={() => setEditingId(null)}
+                          className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

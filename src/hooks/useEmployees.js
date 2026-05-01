@@ -40,6 +40,18 @@ export function useEmployees() {
     setEmployees(prev => prev.filter(e => e.id !== id))
   }, [])
 
+  const updateEmployee = useCallback(async (id, fields) => {
+    const { data, error } = await supabase
+      .from('employees')
+      .update(fields)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    setEmployees(prev => prev.map(e => e.id === id ? data : e))
+    return data
+  }, [])
+
   const updateEmployeePassword = useCallback(async (id, encodedPassword) => {
     const { data, error } = await supabase
       .from('employees')
@@ -52,5 +64,5 @@ export function useEmployees() {
     return data
   }, [])
 
-  return { employees, loading, error, addEmployee, deleteEmployee, updateEmployeePassword, refetch: fetchEmployees }
+  return { employees, loading, error, addEmployee, deleteEmployee, updateEmployee, updateEmployeePassword, refetch: fetchEmployees }
 }
