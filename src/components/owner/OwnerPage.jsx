@@ -6,15 +6,67 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, Copy, Check } from 'lucide-react'
 
-/* ─── PIN helpers (Supabase) ─── */
+/* ─── Constants ─── */
+const QUESTIONS = [
+  'ما اسم أول مدرسة درست فيها؟',
+  'ما اسم مدينة ولادتك؟',
+  'ما اسم حيوانك الأليف الأول؟',
+  'ما اسم والدتك قبل الزواج؟',
+  'ما هو طبقك المفضل؟',
+  'ما اسم أفضل صديق في طفولتك؟',
+  'ما اسم الشارع الذي نشأت فيه؟',
+  'ما هي السيارة الأولى التي امتلكتها؟',
+  'ما اسم المدينة التي قضيت فيها طفولتك؟',
+  'ما اسم معلمك المفضل؟',
+  'ما اسم أول عمل عملته؟',
+  'ما اسم جدك لأبيك؟',
+]
+
+/* ─── Helpers ─── */
 const fetchPin = async () => {
   const { data } = await supabase.from('settings').select('value').eq('key', 'owner_pin').single()
   return data?.value ? atob(data.value) : null
 }
 const savePin = async (p) => {
   await supabase.from('settings').upsert({ key: 'owner_pin', value: btoa(p) })
+}
+
+const fetchSecurityData = async () => {
+  const { data } = await supabase.from('settings').select('key,value')
+    .in('key', ['owner_security_q1','owner_security_a1','owner_security_q2','owner_security_a2','owner_security_q3','owner_security_a3'])
+  if (!data || data.length < 6) return null
+  const m = Object.fromEntries(data.map(r => [r.key, r.value]))
+  if (!m.owner_security_q1) return null
+  return [
+    { q: m.owner_security_q1, a: m.owner_security_a1 },
+    { q: m.owner_security_q2, a: m.owner_security_a2 },
+    { q: m.owner_security_q3, a: m.owner_security_a3 },
+  ]
+}
+
+const saveSecurityData = async (pairs) => {
+  const rows = []
+  pairs.forEach((p, i) => {
+    rows.push({ key: `owner_security_q${i+1}`, value: p.q })
+    rows.push({ key: `owner_security_a${i+1}`, value: btoa(p.a.trim().toLowerCase()) })
+  })
+  await supabase.from('settings').upsert(rows)
+}
+
+const generateCode = () => {
+  const seg = () => Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${seg()}-${seg()}-${seg()}-${seg()}`
+}
+
+const fetchRecoveryCode = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_recovery_code').single()
+  return data?.value ? atob(data.value) : null
+}
+
+const saveRecoveryCode = async (code) => {
+  await supabase.from('settings').upsert({ key: 'owner_recovery_code', value: btoa(code) })
 }
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
@@ -104,17 +156,29 @@ export function OwnerPage() {
   const [showForm, setShowForm]     = useState(false)
   const [saving, setSaving]         = useState(false)
 
+  /* Forgot-password flow state */
+  const [securityPairs, setSecurityPairs] = useState([
+    { q: QUESTIONS[0], a: '' },
+    { q: QUESTIONS[1], a: '' },
+    { q: QUESTIONS[2], a: '' },
+  ])
+  const [generatedCode, setGeneratedCode] = useState('')
+  const [forgotQs, setForgotQs]           = useState(null)
+  const [forgotAnswers, setForgotAnswers]  = useState(['', '', ''])
+  const [wrongAttempts, setWrongAttempts]  = useState(0)
+  const [recoveryInput, setRecoveryInput]  = useState('')
+  const [codeCopied, setCodeCopied]        = useState(false)
+
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
   const { employees, loading: empsLoading, addEmployee, deleteEmployee } = useEmployees()
 
-  /* جلب PIN عند التحميل */
   useEffect(() => {
     fetchPin().then(p => {
       setStoredPin(p)
-      if (!p)       setStep('setup')
+      if (!p)         setStep('setup')
       else if (isOwner) setStep('dashboard')
-      else          setStep('login')
+      else            setStep('login')
     })
   }, [isOwner])
 
@@ -130,6 +194,26 @@ export function OwnerPage() {
     try { await deleteEmployee(id) } catch (e) { setError(e.message) }
   }
 
+  const goToForgot = async () => {
+    setError('')
+    setForgotAnswers(['', '', ''])
+    setWrongAttempts(0)
+    const data = await fetchSecurityData()
+    if (!data) {
+      setForgotQs(null)
+      setStep('forgotCode')
+    } else {
+      setForgotQs(data)
+      setStep('forgot')
+    }
+  }
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(generatedCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
+
   /* ── LOADING ── */
   if (step === 'loading') return (
     <div className="flex items-center justify-center py-32">
@@ -137,33 +221,162 @@ export function OwnerPage() {
     </div>
   )
 
-  /* ── SETUP ── */
+  /* ── SETUP — PIN entry ── */
   if (step === 'setup') return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="flex justify-center gap-2 mb-1">
+          {['كلمة المرور', 'أسئلة الأمان', 'رمز الاستعادة'].map((label, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                i === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+              }`}>{i + 1}</div>
+              {i < 2 && <div className="w-8 h-0.5 bg-gray-200 dark:bg-gray-700" />}
+            </div>
+          ))}
+        </div>
         <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto">
           <KeyRound size={26} className="text-blue-600 dark:text-blue-400" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد كلمة مرور المالك</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">حدد كلمة مرور للوصول لصفحة المالك</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 3</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
           <div className="relative">
-            <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور" />
+            <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
+              className={inputCls} placeholder="كلمة المرور" />
             <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" />
+          <input type="password" value={confirmPin} onChange={e => setConfirm(e.target.value)}
+            className={inputCls} placeholder="تأكيد كلمة المرور" />
         </div>
         <button onClick={async () => {
           if (pin.length < 4) return setError('4 أحرف على الأقل')
           if (pin !== confirmPin) return setError('كلمتا المرور غير متطابقتين')
-          await savePin(pin); setStoredPin(pin); setError(''); await ownerLogin(); setStep('dashboard')
+          await savePin(pin)
+          setStoredPin(pin)
+          setError('')
+          setStep('setupQ')
         }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-          تعيين كلمة المرور
+          التالي ←
+        </button>
+      </div>
+    </div>
+  )
+
+  /* ── SETUP — Security Questions ── */
+  if (step === 'setupQ') return (
+    <div className="max-w-md mx-auto mt-10">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 space-y-5">
+        <div className="flex justify-center gap-2">
+          {['كلمة المرور', 'أسئلة الأمان', 'رمز الاستعادة'].map((label, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                i === 1 ? 'bg-blue-600 text-white' : i === 0 ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+              }`}>{i === 0 ? '✓' : i + 1}</div>
+              {i < 2 && <div className={`w-8 h-0.5 ${i === 0 ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`} />}
+            </div>
+          ))}
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 3 — اختر 3 أسئلة مختلفة وأجب عنها</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
+        <div className="space-y-4">
+          {securityPairs.map((pair, i) => (
+            <div key={i} className="space-y-2">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block">السؤال {i + 1}</label>
+              <select value={pair.q}
+                onChange={e => {
+                  const copy = [...securityPairs]
+                  copy[i] = { ...copy[i], q: e.target.value }
+                  setSecurityPairs(copy)
+                }}
+                className={inputCls}>
+                {QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+              </select>
+              <input type="text" value={pair.a}
+                onChange={e => {
+                  const copy = [...securityPairs]
+                  copy[i] = { ...copy[i], a: e.target.value }
+                  setSecurityPairs(copy)
+                }}
+                className={inputCls} placeholder="إجابتك (غير حساسة لحالة الأحرف)" />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          <button onClick={async () => {
+            if (securityPairs.some(p => !p.a.trim())) return setError('يرجى الإجابة على جميع الأسئلة')
+            if (new Set(securityPairs.map(p => p.q)).size < 3) return setError('يرجى اختيار 3 أسئلة مختلفة')
+            await saveSecurityData(securityPairs)
+            const code = generateCode()
+            await saveRecoveryCode(code)
+            setGeneratedCode(code)
+            setError('')
+            setStep('setupCode')
+          }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+            التالي ←
+          </button>
+          <button onClick={() => { setStep('setup'); setError('') }}
+            className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
+            رجوع
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  /* ── SETUP CODE / VIEW NEW CODE — Show recovery code ── */
+  if (step === 'setupCode' || step === 'viewNewCode') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        {step === 'setupCode' && (
+          <div className="flex justify-center gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  i < 2 ? 'bg-green-500 text-white' : 'bg-blue-600 text-white'
+                }`}>{i < 2 ? '✓' : '3'}</div>
+                {i < 2 && <div className="w-8 h-0.5 bg-green-400" />}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <KeyRound size={26} className="text-amber-600 dark:text-amber-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز الاستعادة</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {step === 'setupCode' ? 'الخطوة 3 من 3 — ' : ''}احفظ هذا الرمز في مكان آمن
+          </p>
+        </div>
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+          <p className="text-xs text-amber-700 dark:text-amber-400">لن يظهر هذا الرمز مرة أخرى. يستخدم للوصول في حال نسيت كلمة المرور.</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-600">
+          <p className="font-mono text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-widest select-all">{generatedCode}</p>
+        </div>
+        <button onClick={copyCode}
+          className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-colors">
+          {codeCopied ? <><Check size={14} className="text-green-500" /> تم النسخ</> : <><Copy size={14} /> نسخ الرمز</>}
+        </button>
+        <button onClick={async () => {
+          setCodeCopied(false)
+          if (step === 'setupCode') {
+            await ownerLogin()
+            setStep('dashboard')
+          } else {
+            setStep('resetPin')
+          }
+        }} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors">
+          تم الحفظ ✓
         </button>
       </div>
     </div>
@@ -182,17 +395,164 @@ export function OwnerPage() {
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="relative text-right">
-          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)} className={inputCls} placeholder="كلمة المرور"
-            onKeyDown={async e => { if (e.key === 'Enter') { if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}} />
+          <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
+            className={inputCls} placeholder="كلمة المرور"
+            onKeyDown={async e => {
+              if (e.key === 'Enter') {
+                if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') }
+                else setError('كلمة المرور غير صحيحة')
+              }
+            }} />
           <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
-        <button onClick={async () => { if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') } else setError('كلمة المرور غير صحيحة') }}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+        <button onClick={async () => {
+          if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') }
+          else setError('كلمة المرور غير صحيحة')
+        }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           دخول
         </button>
-        <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">رجوع للرئيسية</button>
+        <button onClick={() => { setPin(''); setError(''); goToForgot() }}
+          className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline">
+          نسيت كلمة المرور؟
+        </button>
+        <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
+          رجوع للرئيسية
+        </button>
+      </div>
+    </div>
+  )
+
+  /* ── FORGOT — Security Questions ── */
+  if (step === 'forgot') return (
+    <div className="max-w-md mx-auto mt-10">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 space-y-5">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أجب على الأسئلة لاستعادة الوصول</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
+        {wrongAttempts >= 2 && (
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3 text-sm text-orange-600 dark:text-orange-400 text-center">
+            محاولات خاطئة متعددة — يمكنك استخدام رمز الاستعادة
+          </div>
+        )}
+        <div className="space-y-4">
+          {forgotQs?.map((pair, i) => (
+            <div key={i} className="space-y-1.5">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{pair.q}</p>
+              <input type="text" value={forgotAnswers[i]}
+                onChange={e => {
+                  const copy = [...forgotAnswers]
+                  copy[i] = e.target.value
+                  setForgotAnswers(copy)
+                }}
+                className={inputCls} placeholder="إجابتك" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <button onClick={() => {
+            const correct = forgotQs.every((p, i) =>
+              btoa(forgotAnswers[i].trim().toLowerCase()) === p.a
+            )
+            if (correct) {
+              setError('')
+              setStep('resetPin')
+            } else {
+              setWrongAttempts(a => a + 1)
+              setError('إجابة واحدة أو أكثر غير صحيحة، حاول مرة أخرى')
+            }
+          }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+            تحقق
+          </button>
+          <button onClick={() => { setError(''); setStep('forgotCode') }}
+            className="w-full py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline">
+            استخدم رمز الاستعادة بدلاً من ذلك
+          </button>
+          <button onClick={() => { setError(''); setStep('login') }}
+            className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
+            رجوع لتسجيل الدخول
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  /* ── FORGOT CODE — Enter recovery code ── */
+  if (step === 'forgotCode') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <KeyRound size={26} className="text-amber-600 dark:text-amber-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز الاستعادة</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أدخل الرمز الذي حصلت عليه عند إعداد حسابك</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+        <input type="text" value={recoveryInput}
+          onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
+          className={`${inputCls} text-center font-mono tracking-widest`}
+          placeholder="XXXX-XXXX-XXXX-XXXX" />
+        <button onClick={async () => {
+          const stored = await fetchRecoveryCode()
+          if (!stored) return setError('لا يوجد رمز استعادة محفوظ')
+          if (recoveryInput.trim() !== stored) return setError('الرمز غير صحيح')
+          const newCode = generateCode()
+          await saveRecoveryCode(newCode)
+          setGeneratedCode(newCode)
+          setRecoveryInput('')
+          setError('')
+          setStep('viewNewCode')
+        }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+          تحقق
+        </button>
+        <button onClick={() => { setError(''); setStep(forgotQs ? 'forgot' : 'login') }}
+          className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
+          رجوع
+        </button>
+      </div>
+    </div>
+  )
+
+  /* ── RESET PIN — Enter new password ── */
+  if (step === 'resetPin') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="w-14 h-14 bg-green-100 dark:bg-green-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <KeyRound size={26} className="text-green-600 dark:text-green-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">تعيين كلمة مرور جديدة</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم التحقق بنجاح</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+        <div className="space-y-3 text-right">
+          <div className="relative">
+            <input type={showPin ? 'text' : 'password'} value={newPin} onChange={e => setNewPin(e.target.value)}
+              className={inputCls} placeholder="كلمة المرور الجديدة" />
+            <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          <input type="password" value={confirmNew} onChange={e => setConfirmNew(e.target.value)}
+            className={inputCls} placeholder="تأكيد كلمة المرور" />
+        </div>
+        <button onClick={async () => {
+          if (newPin.length < 4) return setError('4 أحرف على الأقل')
+          if (newPin !== confirmNew) return setError('كلمتا المرور غير متطابقتين')
+          await savePin(newPin)
+          setStoredPin(newPin)
+          setNewPin('')
+          setConfirmNew('')
+          setError('')
+          await ownerLogin()
+          setStep('dashboard')
+        }} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors">
+          حفظ وتسجيل الدخول
+        </button>
       </div>
     </div>
   )
