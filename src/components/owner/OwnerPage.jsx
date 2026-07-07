@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X, Key } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X, Key, Mail, RefreshCw } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -62,6 +62,23 @@ const saveSecurityData = async (pairs) => {
     rows.push({ key: `owner_security_a${i+1}`, value: btoa(p.a.trim().toLowerCase()) })
   })
   await supabase.from('settings').upsert(rows)
+}
+
+/* ─── OTP helpers ─── */
+const fetchOwnerEmail = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_email').single()
+  return data?.value || null
+}
+const saveOwnerEmail = async (email) => {
+  await supabase.from('settings').upsert({ key: 'owner_email', value: email })
+}
+const sendOtp = async (email) => {
+  const { error } = await supabase.auth.signInWithOtp({ email })
+  return error
+}
+const verifyOtpCode = async (email, token) => {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+  return error
 }
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
@@ -155,6 +172,10 @@ export function OwnerPage() {
   const [setupQSource, setSetupQSource]   = useState('setup')
   const [forgotQs, setForgotQs]          = useState(null)
   const [forgotAnswers, setForgotAnswers] = useState(['', '', ''])
+  const [emailInput, setEmailInput]       = useState('')
+  const [loginEmail, setLoginEmail]       = useState('')
+  const [otpCode, setOtpCode]             = useState('')
+  const [otpSending, setOtpSending]       = useState(false)
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
@@ -214,15 +235,17 @@ export function OwnerPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
         <div className="flex justify-center items-center gap-2 mb-1">
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">1</div>
-          <div className="w-12 h-0.5 bg-gray-200 dark:bg-gray-700" />
+          <div className="w-8 h-0.5 bg-gray-200 dark:bg-gray-700" />
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-400">2</div>
+          <div className="w-8 h-0.5 bg-gray-200 dark:bg-gray-700" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-400">3</div>
         </div>
         <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto">
           <KeyRound size={26} className="text-blue-600 dark:text-blue-400" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد كلمة مرور المالك</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 2</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 3</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
@@ -242,10 +265,55 @@ export function OwnerPage() {
           await savePin(pin)
           setStoredPin(pin)
           setError('')
-          setStep('setupQ')
+          setStep('setupEmail')
         }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           التالي ←
         </button>
+      </div>
+    </div>
+  )
+
+  /* ── SETUP — Email for OTP ── */
+  if (step === 'setupEmail') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="flex justify-center items-center gap-2 mb-1">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">✓</div>
+          <div className="w-8 h-0.5 bg-green-400" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">2</div>
+          <div className="w-8 h-0.5 bg-gray-200 dark:bg-gray-700" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-400">3</div>
+        </div>
+        <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <Mail size={26} className="text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">البريد الإلكتروني</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 3 — لإرسال رمز OTP عند تسجيل الدخول</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+        <input
+          type="email"
+          value={emailInput}
+          onChange={e => setEmailInput(e.target.value)}
+          className={inputCls + ' text-right'}
+          placeholder="example@email.com"
+          dir="ltr"
+        />
+        <div className="flex gap-3">
+          <button onClick={async () => {
+            if (!emailInput.includes('@') || !emailInput.includes('.')) return setError('بريد إلكتروني غير صحيح')
+            await saveOwnerEmail(emailInput)
+            setError('')
+            setStep('setupQ')
+          }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+            التالي ←
+          </button>
+          <button onClick={() => { setStep('setup'); setError('') }}
+            className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-colors">
+            رجوع
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -256,13 +324,15 @@ export function OwnerPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 space-y-5">
         <div className="flex justify-center items-center gap-2">
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">✓</div>
-          <div className="w-12 h-0.5 bg-green-400" />
-          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">2</div>
+          <div className="w-8 h-0.5 bg-green-400" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">✓</div>
+          <div className="w-8 h-0.5 bg-green-400" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">3</div>
         </div>
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">أسئلة الأمان</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {setupQSource === 'dashboard' ? 'تحديث أسئلة الأمان' : 'الخطوة 2 من 2'} — اختر 3 أسئلة مختلفة وأجب عنها
+            {setupQSource === 'dashboard' ? 'تحديث أسئلة الأمان' : 'الخطوة 3 من 3'} — اختر 3 أسئلة مختلفة وأجب عنها
           </p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
@@ -304,7 +374,7 @@ export function OwnerPage() {
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             {setupQSource === 'dashboard' ? 'حفظ الأسئلة' : 'حفظ وتسجيل الدخول'}
           </button>
-          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setup'); setError('') }}
+          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setupEmail'); setError('') }}
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
             رجوع
           </button>
@@ -328,21 +398,30 @@ export function OwnerPage() {
         <div className="relative text-right">
           <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
             className={inputCls} placeholder="كلمة المرور"
-            onKeyDown={async e => {
-              if (e.key === 'Enter') {
-                if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') }
-                else setError('كلمة المرور غير صحيحة')
-              }
-            }} />
+            onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
           <button onClick={() => setShowPin(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
         <button onClick={async () => {
-          if (pin === storedPin) { setError(''); await ownerLogin(); setStep('dashboard') }
-          else setError('كلمة المرور غير صحيحة')
-        }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-          دخول
+          if (pin !== storedPin) return setError('كلمة المرور غير صحيحة')
+          setError('')
+          setOtpSending(true)
+          const email = await fetchOwnerEmail()
+          if (!email) {
+            setOtpSending(false)
+            await ownerLogin()
+            setStep('dashboard')
+            return
+          }
+          const err = await sendOtp(email)
+          setOtpSending(false)
+          if (err) return setError('فشل إرسال رمز OTP — تحقق من الإعدادات')
+          setLoginEmail(email)
+          setOtpCode('')
+          setStep('otpVerify')
+        }} disabled={otpSending} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+          {otpSending ? 'جاري إرسال الرمز...' : 'دخول'}
         </button>
         <button onClick={() => { setPin(''); setError(''); goToForgot() }}
           className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline">
@@ -350,6 +429,61 @@ export function OwnerPage() {
         </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
           رجوع للرئيسية
+        </button>
+      </div>
+    </div>
+  )
+
+  /* ── OTP VERIFY ── */
+  if (step === 'otpVerify') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <Mail size={26} className="text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق OTP</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            تم إرسال رمز مكوّن من 6 أرقام إلى
+          </p>
+          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-0.5" dir="ltr">{loginEmail}</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          value={otpCode}
+          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+          className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
+          placeholder="000000"
+          dir="ltr"
+        />
+        <button onClick={async () => {
+          if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+          const err = await verifyOtpCode(loginEmail, otpCode)
+          if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
+          setError('')
+          await ownerLogin()
+          setStep('dashboard')
+        }} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors">
+          تحقق وادخل
+        </button>
+        <button onClick={async () => {
+          setError('')
+          setOtpSending(true)
+          const err = await sendOtp(loginEmail)
+          setOtpSending(false)
+          if (err) setError('فشل إعادة الإرسال')
+          else setError('')
+        }} disabled={otpSending}
+          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
+          <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
+          {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
+        </button>
+        <button onClick={() => { setStep('login'); setOtpCode(''); setError('') }}
+          className="w-full py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:underline">
+          رجوع لتسجيل الدخول
         </button>
       </div>
     </div>
@@ -487,6 +621,16 @@ export function OwnerPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <button onClick={async () => {
+            const em = await fetchOwnerEmail()
+            setEmailInput(em || '')
+            setError('')
+            setStep('setupEmail')
+            setSetupQSource('dashboard')
+          }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
+            <Mail size={14} /> البريد / OTP
+          </button>
           <button onClick={() => { setSetupQSource('dashboard'); setSecurityPairs(randomQs()); setError(''); setStep('setupQ') }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
             <HelpCircle size={14} /> أسئلة الأمان
