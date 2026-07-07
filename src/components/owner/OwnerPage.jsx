@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X, Key, Mail, RefreshCw } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, HelpCircle, Pencil, X, Key, Smartphone, RefreshCw } from 'lucide-react'
 
 /* ─── Constants ─── */
 const QUESTIONS = [
@@ -65,19 +65,26 @@ const saveSecurityData = async (pairs) => {
 }
 
 /* ─── OTP helpers ─── */
-const fetchOwnerEmail = async () => {
-  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_email').single()
+const normalizePhone = (raw) => {
+  const d = raw.replace(/\D/g, '')
+  if (d.startsWith('966')) return '+' + d
+  if (d.startsWith('0')) return '+966' + d.slice(1)
+  return '+966' + d
+}
+const maskPhone = (phone) => phone.slice(0, -4) + '****'
+const fetchOwnerPhone = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_phone').single()
   return data?.value || null
 }
-const saveOwnerEmail = async (email) => {
-  await supabase.from('settings').upsert({ key: 'owner_email', value: email })
+const saveOwnerPhone = async (phone) => {
+  await supabase.from('settings').upsert({ key: 'owner_phone', value: phone })
 }
-const sendOtp = async (email) => {
-  const { error } = await supabase.auth.signInWithOtp({ email })
+const sendOtp = async (phone) => {
+  const { error } = await supabase.auth.signInWithOtp({ phone })
   return error
 }
-const verifyOtpCode = async (email, token) => {
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+const verifyOtpCode = async (phone, token) => {
+  const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' })
   return error
 }
 
@@ -172,8 +179,8 @@ export function OwnerPage() {
   const [setupQSource, setSetupQSource]   = useState('setup')
   const [forgotQs, setForgotQs]          = useState(null)
   const [forgotAnswers, setForgotAnswers] = useState(['', '', ''])
-  const [emailInput, setEmailInput]       = useState('')
-  const [loginEmail, setLoginEmail]       = useState('')
+  const [phoneInput, setPhoneInput]       = useState('')
+  const [loginPhone, setLoginPhone]       = useState('')
   const [otpCode, setOtpCode]             = useState('')
   const [otpSending, setOtpSending]       = useState(false)
 
@@ -267,7 +274,7 @@ export function OwnerPage() {
           await savePin(pin)
           setStoredPin(pin)
           setError('')
-          setStep('setupEmail')
+          setStep('setupPhone')
         }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
           التالي ←
         </button>
@@ -275,8 +282,8 @@ export function OwnerPage() {
     </div>
   )
 
-  /* ── SETUP — Email for OTP ── */
-  if (step === 'setupEmail') return (
+  /* ── SETUP — Phone for OTP ── */
+  if (step === 'setupPhone') return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
         <div className="flex justify-center items-center gap-2 mb-1">
@@ -287,31 +294,39 @@ export function OwnerPage() {
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-400">3</div>
         </div>
         <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
-          <Mail size={26} className="text-purple-600 dark:text-purple-400" />
+          <Smartphone size={26} className="text-purple-600 dark:text-purple-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">البريد الإلكتروني</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 3 — لإرسال رمز OTP عند تسجيل الدخول</p>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رقم الجوال</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 2 من 3 — سيُرسل رمز OTP عبر SMS</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
-        <input
-          type="email"
-          value={emailInput}
-          onChange={e => setEmailInput(e.target.value)}
-          className={inputCls + ' text-right'}
-          placeholder="example@email.com"
-          dir="ltr"
-        />
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 font-mono shrink-0">+966</span>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={phoneInput}
+            onChange={e => setPhoneInput(e.target.value.replace(/\D/g, ''))}
+            className={inputCls}
+            placeholder="05XXXXXXXX"
+            dir="ltr"
+            maxLength={10}
+          />
+        </div>
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-right -mt-2">مثال: 0512345678</p>
         <div className="flex gap-3">
           <button onClick={async () => {
-            if (!emailInput.includes('@') || !emailInput.includes('.')) return setError('بريد إلكتروني غير صحيح')
-            await saveOwnerEmail(emailInput)
+            const digits = phoneInput.replace(/\D/g, '')
+            if (digits.length < 9) return setError('رقم الجوال غير صحيح')
+            const phone = normalizePhone(phoneInput)
+            await saveOwnerPhone(phone)
             setError('')
             setStep('setupQ')
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             التالي ←
           </button>
-          <button onClick={() => { setStep('setup'); setError('') }}
+          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setup'); setError('') }}
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm transition-colors">
             رجوع
           </button>
@@ -376,7 +391,7 @@ export function OwnerPage() {
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             {setupQSource === 'dashboard' ? 'حفظ الأسئلة' : 'حفظ وتسجيل الدخول'}
           </button>
-          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setupEmail'); setError('') }}
+          <button onClick={() => { setStep(setupQSource === 'dashboard' ? 'dashboard' : 'setupPhone'); setError('') }}
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
             رجوع
           </button>
@@ -409,17 +424,17 @@ export function OwnerPage() {
           if (pin !== storedPin) return setError('كلمة المرور غير صحيحة')
           setError('')
           setOtpSending(true)
-          const email = await fetchOwnerEmail()
-          if (!email) {
+          const phone = await fetchOwnerPhone()
+          if (!phone) {
             setOtpSending(false)
             await ownerLogin()
             setStep('dashboard')
             return
           }
-          const err = await sendOtp(email)
+          const err = await sendOtp(phone)
           setOtpSending(false)
-          if (err) return setError('فشل إرسال رمز OTP — تحقق من الإعدادات')
-          setLoginEmail(email)
+          if (err) return setError('فشل إرسال رمز OTP — تحقق من إعدادات SMS')
+          setLoginPhone(phone)
           setOtpCode('')
           setStep('otpVerify')
         }} disabled={otpSending} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
@@ -441,14 +456,14 @@ export function OwnerPage() {
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
         <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
-          <Mail size={26} className="text-purple-600 dark:text-purple-400" />
+          <Smartphone size={26} className="text-purple-600 dark:text-purple-400" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق OTP</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            تم إرسال رمز مكوّن من 6 أرقام إلى
+            تم إرسال رمز مكوّن من 6 أرقام عبر SMS إلى
           </p>
-          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-0.5" dir="ltr">{loginEmail}</p>
+          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-0.5 font-mono" dir="ltr">{maskPhone(loginPhone)}</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <input
@@ -463,7 +478,7 @@ export function OwnerPage() {
         />
         <button onClick={async () => {
           if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
-          const err = await verifyOtpCode(loginEmail, otpCode)
+          const err = await verifyOtpCode(loginPhone, otpCode)
           if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
           setError('')
           await ownerLogin()
@@ -474,7 +489,7 @@ export function OwnerPage() {
         <button onClick={async () => {
           setError('')
           setOtpSending(true)
-          const err = await sendOtp(loginEmail)
+          const err = await sendOtp(loginPhone)
           setOtpSending(false)
           if (err) setError('فشل إعادة الإرسال')
           else setError('')
@@ -624,14 +639,15 @@ export function OwnerPage() {
         </div>
         <div className="flex gap-2">
           <button onClick={async () => {
-            const em = await fetchOwnerEmail()
-            setEmailInput(em || '')
+            const ph = await fetchOwnerPhone()
+            const raw = ph ? ph.replace('+966', '') : ''
+            setPhoneInput(raw)
             setError('')
-            setStep('setupEmail')
+            setStep('setupPhone')
             setSetupQSource('dashboard')
           }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
-            <Mail size={14} /> البريد / OTP
+            <Smartphone size={14} /> الجوال / OTP
           </button>
           <button onClick={() => { setSetupQSource('dashboard'); setSecurityPairs(randomQs()); setError(''); setStep('setupQ') }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
