@@ -190,12 +190,14 @@ export function OwnerPage() {
   const [passError, setPassError]     = useState('')
 
   useEffect(() => {
-    fetchPin().then(p => {
-      setStoredPin(p)
-      if (!p)           setStep('setup')
-      else if (isOwner) setStep('dashboard')
-      else              setStep('login')
-    })
+    fetchPin()
+      .then(p => {
+        setStoredPin(p)
+        if (!p)           setStep('setup')
+        else if (isOwner) setStep('dashboard')
+        else              setStep('login')
+      })
+      .catch(() => setStep('login'))
   }, [isOwner])
 
   const handleAddEmployee = async (empData) => {
