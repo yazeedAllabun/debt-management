@@ -142,6 +142,7 @@ export function OwnerPage() {
   const [otpCode, setOtpCode]       = useState('')
   const [otpSending, setOtpSending] = useState(false)
   const [fromDashboard, setFromDashboard] = useState(false)
+  const [otpFailed, setOtpFailed]   = useState(false)
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
@@ -324,7 +325,7 @@ export function OwnerPage() {
         </div>
         <button onClick={async () => {
           if (pin !== storedPin) return setError('كلمة المرور غير صحيحة')
-          setError('')
+          setError(''); setOtpFailed(false)
           setOtpSending(true)
           const phone = await fetchOwnerPhone()
           if (!phone) {
@@ -335,13 +336,24 @@ export function OwnerPage() {
           }
           const err = await sendOtp(phone)
           setOtpSending(false)
-          if (err) return setError('فشل إرسال رمز OTP — تحقق من إعدادات SMS')
+          if (err) {
+            setOtpFailed(true)
+            return setError('فشل إرسال OTP: ' + (err.message || JSON.stringify(err)))
+          }
           setLoginPhone(phone)
           setOtpCode('')
           setStep('otpVerify')
         }} disabled={otpSending} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
           {otpSending ? 'جاري إرسال الرمز...' : 'دخول'}
         </button>
+        {otpFailed && (
+          <button onClick={async () => {
+            if (pin !== storedPin) return setError('كلمة المرور غير صحيحة')
+            await ownerLogin(); setStep('dashboard')
+          }} className="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-xl transition-colors">
+            دخول بدون SMS (كلمة المرور فقط)
+          </button>
+        )}
         <button onClick={async () => {
           setError('')
           setPin('')
