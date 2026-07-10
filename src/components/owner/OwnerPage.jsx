@@ -396,13 +396,17 @@ export function OwnerPage() {
           <button onClick={async () => {
             if (securityPairs.some(p => !p.a.trim())) return setError('يرجى الإجابة على جميع الأسئلة')
             if (new Set(securityPairs.map(p => p.q)).size < 3) return setError('يرجى اختيار 3 أسئلة مختلفة')
-            await saveSecurityData(securityPairs)
-            setError('')
-            if (setupQSource === 'dashboard') {
-              setStep('dashboard')
-            } else {
-              await ownerLogin()
-              setStep('dashboard')
+            try {
+              await saveSecurityData(securityPairs)
+              setError('')
+              if (setupQSource === 'dashboard') {
+                setStep('dashboard')
+              } else {
+                await ownerLogin()
+                setStep('dashboard')
+              }
+            } catch (e) {
+              setError('فشل الحفظ: ' + (e.message || 'تحقق من الاتصال'))
             }
           }} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
             {setupQSource === 'dashboard' ? 'حفظ الأسئلة' : 'حفظ وتسجيل الدخول'}
@@ -411,6 +415,14 @@ export function OwnerPage() {
             className="px-5 py-3 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm">
             رجوع
           </button>
+          {setupQSource !== 'dashboard' && (
+            <button onClick={async () => {
+              try { await ownerLogin(); setStep('dashboard') }
+              catch (e) { setError('فشل تسجيل الدخول: ' + (e.message || '')) }
+            }} className="px-4 py-3 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors text-xs">
+              تخطي
+            </button>
+          )}
         </div>
       </div>
     </div>
