@@ -366,6 +366,17 @@ export function OwnerPage() {
         }} className="w-full py-1.5 text-sm text-green-600 dark:text-green-400 hover:underline">
           تسجيل مالك جديد
         </button>
+        <button onClick={async () => {
+          if (!window.confirm('سيتم حذف بيانات المالك نهائياً. هل أنت متأكد؟')) return
+          try {
+            await supabase.from('settings').delete().in('key', ['owner_pin', 'owner_session_token', 'owner_name', 'owner_phone'])
+            ownerLogout()
+            setStoredPin(null); setOwnerName(''); setPin(''); setNameInput(''); setError('')
+            setStep('setup')
+          } catch (e) { setError('فشل الحذف: ' + (e.message || '')) }
+        }} className="w-full py-1.5 text-sm text-red-500 dark:text-red-400 hover:underline">
+          حذف المالك الحالي
+        </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
           رجوع للرئيسية
         </button>
