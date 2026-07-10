@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, UserCircle, KeyRound, Smartphone, RefreshCw } from 'lucide-react'
+import { Eye, EyeOff, UserCircle, KeyRound, Mail, RefreshCw } from 'lucide-react'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import { supabase } from '../../lib/supabase'
 import logoImg from '../../assets/logo-dark.png'
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
-const normalizePhone = (raw) => {
-  const d = raw.replace(/\D/g, '')
-  if (d.startsWith('966')) return '+' + d
-  if (d.startsWith('0')) return '+966' + d.slice(1)
-  return '+966' + d
+const maskEmail = (email) => {
+  const [user, domain] = email.split('@')
+  return user.slice(0, 2) + '***@' + domain
 }
-const maskPhone = (phone) => phone.slice(0, -4) + '****'
 
 export function EmployeeLogin() {
   const navigate = useNavigate()
@@ -47,10 +44,10 @@ export function EmployeeLogin() {
   }
 
   const sendOtpToEmployee = async (employee) => {
-    if (!employee.phone) return null
-    const phone = normalizePhone(employee.phone)
-    const { error } = await supabase.auth.signInWithOtp({ phone })
-    return error ? null : phone
+    if (!employee.email) return null
+    const email = employee.email.trim().toLowerCase()
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    return error ? null : email
   }
 
   const handleSetPassword = async () => {
@@ -109,7 +106,7 @@ export function EmployeeLogin() {
   const handleVerifyOtp = async () => {
     if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
     setSubmitting(true)
-    const { error } = await supabase.auth.verifyOtp({ phone: otpPhone, token: otpCode, type: 'sms' })
+    const { error } = await supabase.auth.verifyOtp({ email: otpPhone, token: otpCode, type: 'email' })
     if (error) { setSubmitting(false); return setError('الرمز غير صحيح أو انتهت صلاحيته') }
     await employeeLogin(pendingEmp)
     setSubmitting(false)
@@ -236,12 +233,12 @@ export function EmployeeLogin() {
             <>
               <div className="text-center space-y-2">
                 <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
-                  <Smartphone size={26} className="text-purple-600 dark:text-purple-400" />
+                  <Mail size={26} className="text-purple-600 dark:text-purple-400" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز SMS إلى</p>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400 font-mono" dir="ltr">
-                  {maskPhone(otpPhone)}
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز إلى بريدك الإلكتروني</p>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400" dir="ltr">
+                  {maskEmail(otpPhone)}
                 </p>
               </div>
 
@@ -266,7 +263,7 @@ export function EmployeeLogin() {
               <button onClick={async () => {
                 setError('')
                 setOtpSending(true)
-                const { error } = await supabase.auth.signInWithOtp({ phone: otpPhone })
+                const { error } = await supabase.auth.signInWithOtp({ email: otpPhone })
                 setOtpSending(false)
                 if (error) setError('فشل إعادة الإرسال')
               }} disabled={otpSending}
