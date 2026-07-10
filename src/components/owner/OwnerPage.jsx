@@ -36,11 +36,12 @@ const fetchOwnerEmail = async () => {
 const saveOwnerEmail = async (email) => {
   await supabase.from('settings').upsert({ key: 'owner_email', value: email })
 }
-const sendOtp = async (email, redirectPath = '/owner') => {
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin + redirectPath }
-  })
+const sendOtp = async (email) => {
+  const { error } = await supabase.auth.signInWithOtp({ email })
+  return error
+}
+const verifyOtpCode = async (email, token) => {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
   return error
 }
 
@@ -136,10 +137,10 @@ export function OwnerPage() {
 
   const [emailInput, setEmailInput]     = useState('')
   const [loginEmail, setLoginEmail]     = useState('')
+  const [otpCode, setOtpCode]           = useState('')
   const [otpSending, setOtpSending]     = useState(false)
   const [fromDashboard, setFromDashboard] = useState(false)
   const [otpFailed, setOtpFailed]       = useState(false)
-  const [emailMode, setEmailMode]       = useState('login') // 'login' | 'forgot'
 
   const { clients } = useClients()
   const stats = useDashboardStats(clients)
@@ -166,22 +167,6 @@ export function OwnerPage() {
       .catch(() => setStep('login'))
   }, [isOwner])
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') {
-        if (sessionStorage.getItem('otp_owner_login')) {
-          sessionStorage.removeItem('otp_owner_login')
-          await ownerLogin()
-          setStep('dashboard')
-        } else if (sessionStorage.getItem('otp_owner_forgot')) {
-          sessionStorage.removeItem('otp_owner_forgot')
-          setNewPin(''); setConfirmNew('')
-          setStep('resetPin')
-        }
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [ownerLogin])
 
   const handleAddEmployee = async (empData) => {
     setSaving(true)
@@ -340,15 +325,13 @@ export function OwnerPage() {
             setStep('dashboard')
             return
           }
-          sessionStorage.setItem('otp_owner_login', '1')
           const err = await sendOtp(email)
           setOtpSending(false)
           if (err) {
-            sessionStorage.removeItem('otp_owner_login')
             setOtpFailed(true)
             return setError('فشل الإرسال: ' + (err.message || ''))
           }
-          setLoginEmail(email); setEmailMode('login'); setStep('checkEmail')
+          setLoginEmail(email); setOtpCode(''); setStep('otpVerify')
         }} disabled={otpSending} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
           {otpSending ? 'جاري إرسال الرمز...' : 'دخول'}
         </button>
@@ -365,14 +348,10 @@ export function OwnerPage() {
           const email = await fetchOwnerEmail()
           if (!email) return setError('لم يتم تسجيل بريد إلكتروني — أضفه من لوحة التحكم')
           setOtpSending(true)
-          sessionStorage.setItem('otp_owner_forgot', '1')
           const err = await sendOtp(email)
           setOtpSending(false)
-          if (err) {
-            sessionStorage.removeItem('otp_owner_forgot')
-            return setError('فشل الإرسال: ' + (err.message || ''))
-          }
-          setLoginEmail(email); setEmailMode('forgot'); setStep('checkEmail')
+          if (err) return setError('فشل الإرسال: ' + (err.message || ''))
+          setLoginEmail(email); setOtpCode(''); setStep('forgotOtp')
         }} disabled={otpSending}
           className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50">
           نسيت كلمة المرور؟
@@ -403,43 +382,80 @@ export function OwnerPage() {
     </div>
   )
 
-  /* ── CHECK EMAIL (login & forgot) ── */
-  if (step === 'checkEmail') return (
+  /* ── OTP VERIFY (login) ── */
+  if (step === 'otpVerify') return (
     <div className="max-w-sm mx-auto mt-16">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
-        <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto">
-          <Mail size={26} className="text-blue-600 dark:text-blue-400" />
+        <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <Mail size={26} className="text-purple-600 dark:text-purple-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            {emailMode === 'forgot' ? 'استعادة كلمة المرور' : 'تحقق من بريدك'}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم إرسال رابط التحقق إلى</p>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-0.5" dir="ltr">{maskEmail(loginEmail)}</p>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم إرسال رمز 6 أرقام إلى</p>
+          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-0.5" dir="ltr">{maskEmail(loginEmail)}</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300 text-right leading-relaxed">
-          افتح بريدك الإلكتروني وانقر على الرابط المرسل للدخول مباشرة
-        </div>
+        <input type="text" inputMode="numeric" maxLength={6} value={otpCode}
+          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+          className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
+          placeholder="000000" dir="ltr" autoFocus />
+        <button onClick={async () => {
+          if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+          const err = await verifyOtpCode(loginEmail, otpCode)
+          if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
+          setError(''); await ownerLogin(); setStep('dashboard')
+        }} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors">
+          تحقق وادخل
+        </button>
         <button onClick={async () => {
           setError(''); setOtpSending(true)
-          const key = emailMode === 'forgot' ? 'otp_owner_forgot' : 'otp_owner_login'
-          sessionStorage.setItem(key, '1')
-          const err = await sendOtp(loginEmail)
-          setOtpSending(false)
-          if (err) { sessionStorage.removeItem(key); setError('فشل إعادة الإرسال') }
+          await sendOtp(loginEmail); setOtpSending(false)
         }} disabled={otpSending}
-          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50">
+          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
           <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
-          {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرابط'}
+          {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
         </button>
-        <button onClick={() => {
-          sessionStorage.removeItem('otp_owner_login')
-          sessionStorage.removeItem('otp_owner_forgot')
-          setStep('login'); setError('')
-        }} className="w-full py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:underline">
-          رجوع لتسجيل الدخول
+        <button onClick={() => { setStep('login'); setOtpCode(''); setError('') }}
+          className="w-full py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:underline">رجوع</button>
+      </div>
+    </div>
+  )
+
+  /* ── FORGOT OTP ── */
+  if (step === 'forgotOtp') return (
+    <div className="max-w-sm mx-auto mt-16">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center space-y-5">
+        <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/40 rounded-2xl flex items-center justify-center mx-auto">
+          <Mail size={26} className="text-orange-500 dark:text-orange-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">استعادة كلمة المرور</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">تم إرسال رمز 6 أرقام إلى</p>
+          <p className="text-sm font-medium text-orange-500 dark:text-orange-400 mt-0.5" dir="ltr">{maskEmail(loginEmail)}</p>
+        </div>
+        {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
+        <input type="text" inputMode="numeric" maxLength={6} value={otpCode}
+          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+          className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
+          placeholder="000000" dir="ltr" autoFocus />
+        <button onClick={async () => {
+          if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+          const err = await verifyOtpCode(loginEmail, otpCode)
+          if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
+          setError(''); setNewPin(''); setConfirmNew(''); setStep('resetPin')
+        }} className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-colors">
+          تحقق
         </button>
+        <button onClick={async () => {
+          setError(''); setOtpSending(true)
+          await sendOtp(loginEmail); setOtpSending(false)
+        }} disabled={otpSending}
+          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline disabled:opacity-50">
+          <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
+          {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
+        </button>
+        <button onClick={() => { setStep('login'); setOtpCode(''); setError('') }}
+          className="w-full py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:underline">رجوع</button>
       </div>
     </div>
   )

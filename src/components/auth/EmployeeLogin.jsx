@@ -19,12 +19,13 @@ export function EmployeeLogin() {
   const [employees, setEmployees] = useState([])
   const [loadingEmps, setLoadingEmps] = useState(true)
   const [selectedId, setSelectedId]   = useState('')
-  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'check_email'
+  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'otp_verify'
   const [password, setPass] = useState('')
   const [confirm, setConf]  = useState('')
   const [showPass, setShow] = useState(false)
   const [error, setError]   = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [otpCode, setOtpCode]       = useState('')
   const [otpSending, setOtpSending] = useState(false)
   const [otpEmail, setOtpEmail]     = useState('')
   const [pendingEmp, setPendingEmp] = useState(null)
@@ -33,20 +34,6 @@ export function EmployeeLogin() {
     supabase.from('employees').select('*').order('created_at', { ascending: false })
       .then(({ data }) => { setEmployees(data || []); setLoadingEmps(false) })
   }, [])
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') {
-        const empId = sessionStorage.getItem('otp_emp_pending')
-        if (empId) {
-          sessionStorage.removeItem('otp_emp_pending')
-          const { data } = await supabase.from('employees').select('*').eq('id', empId).single()
-          if (data) await employeeLogin(data)
-        }
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [employeeLogin])
 
   const emp = employees.find(e => e.id === selectedId)
 
@@ -59,11 +46,17 @@ export function EmployeeLogin() {
   const sendOtpToEmployee = async (employee) => {
     if (!employee.email) return null
     const email = employee.email.trim().toLowerCase()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin }
-    })
+    const { error } = await supabase.auth.signInWithOtp({ email })
     return error ? null : email
+  }
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+    setSubmitting(true)
+    const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
+    if (error) { setSubmitting(false); return setError('الرمز غير صحيح أو انتهت صلاحيته') }
+    await employeeLogin(pendingEmp)
+    setSubmitting(false)
   }
 
   const handleSetPassword = async () => {
@@ -84,13 +77,8 @@ export function EmployeeLogin() {
       const email = await sendOtpToEmployee(data)
       setOtpSending(false)
       if (email) {
-        sessionStorage.setItem('otp_emp_pending', data.id)
-        setPendingEmp(data)
-        setOtpEmail(email)
-        setError('')
-        setSubmitting(false)
-        setStep('check_email')
-        return
+        setPendingEmp(data); setOtpEmail(email); setOtpCode('')
+        setError(''); setSubmitting(false); setStep('otp_verify'); return
       }
     }
     await employeeLogin(data)
@@ -101,17 +89,12 @@ export function EmployeeLogin() {
     if (!password) return setError('أدخل كلمة المرور')
     if (atob(emp.password) !== password) return setError('كلمة المرور غير صحيحة')
     setError('')
-
     if (emp.email) {
       setSubmitting(true)
       const email = await sendOtpToEmployee(emp)
       setSubmitting(false)
       if (email) {
-        sessionStorage.setItem('otp_emp_pending', emp.id)
-        setPendingEmp(emp)
-        setOtpEmail(email)
-        setStep('check_email')
-        return
+        setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setStep('otp_verify'); return
       }
     }
     setSubmitting(true)
@@ -235,35 +218,47 @@ export function EmployeeLogin() {
             </>
           )}
 
-          {/* ── تحقق من البريد ── */}
-          {step === 'check_email' && (
+          {/* ── التحقق بـ OTP ── */}
+          {step === 'otp_verify' && (
             <>
               <div className="text-center space-y-2">
-                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto">
-                  <Mail size={26} className="text-blue-600 dark:text-blue-400" />
+                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
+                  <Mail size={26} className="text-purple-600 dark:text-purple-400" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">تحقق من بريدك</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رابط الدخول إلى</p>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400" dir="ltr">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز 6 أرقام إلى</p>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400" dir="ltr">
                   {maskEmail(otpEmail)}
                 </p>
               </div>
 
               {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300 text-right">
-                افتح بريدك الإلكتروني وانقر على الرابط المرسل للدخول مباشرة
-              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
+                placeholder="000000"
+                dir="ltr"
+                autoFocus
+              />
+
+              <button onClick={handleVerifyOtp} disabled={submitting}
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+                {submitting ? 'جاري التحقق...' : 'تحقق وادخل'}
+              </button>
 
               <button onClick={async () => {
                 setError(''); setOtpSending(true)
-                if (pendingEmp) sessionStorage.setItem('otp_emp_pending', pendingEmp.id)
-                await supabase.auth.signInWithOtp({ email: otpEmail, options: { emailRedirectTo: window.location.origin } })
+                await supabase.auth.signInWithOtp({ email: otpEmail })
                 setOtpSending(false)
               }} disabled={otpSending}
-                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50">
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
                 <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
-                {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرابط'}
+                {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
               </button>
 
               <button onClick={goBack} className="w-full py-1.5 text-sm text-gray-400 dark:text-gray-500 hover:underline">
