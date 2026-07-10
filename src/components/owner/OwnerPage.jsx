@@ -32,6 +32,13 @@ const fetchPin = async () => {
 const savePin = async (p) => {
   await supabase.from('settings').upsert({ key: 'owner_pin', value: btoa(p) })
 }
+const fetchOwnerName = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_name').single()
+  return data?.value || null
+}
+const saveOwnerName = async (name) => {
+  await supabase.from('settings').upsert({ key: 'owner_name', value: name })
+}
 
 const fetchSecurityData = async () => {
   const { data } = await supabase.from('settings').select('key,value')
@@ -165,6 +172,8 @@ export function OwnerPage() {
 
   const [step, setStep]             = useState('loading')
   const [storedPin, setStoredPin]   = useState(null)
+  const [ownerName, setOwnerName]   = useState('')
+  const [nameInput, setNameInput]   = useState('')
   const [pin, setPin]               = useState('')
   const [confirmPin, setConfirm]    = useState('')
   const [newPin, setNewPin]         = useState('')
@@ -198,8 +207,10 @@ export function OwnerPage() {
 
   useEffect(() => {
     fetchPin()
-      .then(p => {
+      .then(async p => {
         setStoredPin(p)
+        const name = await fetchOwnerName()
+        if (name) setOwnerName(name)
         if (!p)           setStep('setup')
         else if (isOwner) setStep('dashboard')
         else              setStep('login')
@@ -253,11 +264,13 @@ export function OwnerPage() {
           <KeyRound size={26} className="text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد كلمة مرور المالك</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد حساب المالك</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 3</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
+          <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
+            className={inputCls} placeholder="اسم المالك *" />
           <div className="relative">
             <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
               className={inputCls} placeholder="كلمة المرور" />
@@ -269,9 +282,12 @@ export function OwnerPage() {
             className={inputCls} placeholder="تأكيد كلمة المرور" />
         </div>
         <button onClick={async () => {
+          if (!nameInput.trim()) return setError('اسم المالك مطلوب')
           if (pin.length < 4) return setError('4 أحرف على الأقل')
           if (pin !== confirmPin) return setError('كلمتا المرور غير متطابقتين')
+          await saveOwnerName(nameInput.trim())
           await savePin(pin)
+          setOwnerName(nameInput.trim())
           setStoredPin(pin)
           setError('')
           setStep('setupPhone')
@@ -443,6 +459,14 @@ export function OwnerPage() {
         <button onClick={() => { setPin(''); setError(''); goToForgot() }}
           className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline">
           نسيت كلمة المرور؟
+        </button>
+        <button onClick={async () => {
+          const p = await fetchPin()
+          if (p) return setError('يوجد حساب مالك مسجّل — استخدم كلمة المرور أو "نسيت كلمة المرور"')
+          setNameInput(''); setPin(''); setConfirm(''); setError('')
+          setStep('setup')
+        }} className="w-full py-1.5 text-sm text-green-600 dark:text-green-400 hover:underline">
+          تسجيل مالك جديد
         </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
           رجوع للرئيسية
@@ -633,7 +657,9 @@ export function OwnerPage() {
             <ShieldCheck size={20} className="text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">صفحة المالك</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              {ownerName ? `مرحباً، ${ownerName}` : 'صفحة المالك'}
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">الملخص المالي الكامل</p>
           </div>
         </div>
