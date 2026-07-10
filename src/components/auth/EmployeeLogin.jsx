@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, UserCircle, KeyRound } from 'lucide-react'
+import { Eye, EyeOff, UserCircle, KeyRound, Smartphone, RefreshCw } from 'lucide-react'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import { supabase } from '../../lib/supabase'
 import logoImg from '../../assets/logo-dark.png'
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
+
+const normalizePhone = (raw) => {
+  const d = raw.replace(/\D/g, '')
+  if (d.startsWith('966')) return '+' + d
+  if (d.startsWith('0')) return '+966' + d.slice(1)
+  return '+966' + d
+}
+const maskPhone = (phone) => phone.slice(0, -4) + '****'
 
 export function EmployeeLogin() {
   const navigate = useNavigate()
@@ -14,12 +22,16 @@ export function EmployeeLogin() {
   const [employees, setEmployees] = useState([])
   const [loadingEmps, setLoadingEmps] = useState(true)
   const [selectedId, setSelectedId]   = useState('')
-  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password'
+  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'otp_verify'
   const [password, setPass] = useState('')
   const [confirm, setConf]  = useState('')
   const [showPass, setShow] = useState(false)
   const [error, setError]   = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [otpCode, setOtpCode]       = useState('')
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpPhone, setOtpPhone]     = useState('')
+  const [pendingEmp, setPendingEmp] = useState(null)
 
   useEffect(() => {
     supabase.from('employees').select('*').order('created_at', { ascending: false })
@@ -34,6 +46,13 @@ export function EmployeeLogin() {
     setStep(emp.password ? 'enter_password' : 'set_password')
   }
 
+  const sendOtpToEmployee = async (employee) => {
+    if (!employee.phone) return null
+    const phone = normalizePhone(employee.phone)
+    const { error } = await supabase.auth.signInWithOtp({ phone })
+    return error ? null : phone
+  }
+
   const handleSetPassword = async () => {
     if (password.length < 4) return setError('كلمة المرور يجب أن تكون 4 أحرف على الأقل')
     if (password !== confirm) return setError('كلمتا المرور غير متطابقتين')
@@ -45,8 +64,22 @@ export function EmployeeLogin() {
       .eq('id', emp.id)
       .select()
       .single()
-    if (error) return setError('حدث خطأ، حاول مجدداً')
-    setSubmitting(true)
+    if (error) { setSubmitting(false); return setError('حدث خطأ، حاول مجدداً') }
+
+    if (data.phone) {
+      setOtpSending(true)
+      const phone = await sendOtpToEmployee(data)
+      setOtpSending(false)
+      if (phone) {
+        setPendingEmp(data)
+        setOtpPhone(phone)
+        setOtpCode('')
+        setError('')
+        setSubmitting(false)
+        setStep('otp_verify')
+        return
+      }
+    }
     await employeeLogin(data)
     setSubmitting(false)
   }
@@ -55,8 +88,30 @@ export function EmployeeLogin() {
     if (!password) return setError('أدخل كلمة المرور')
     if (atob(emp.password) !== password) return setError('كلمة المرور غير صحيحة')
     setError('')
+
+    if (emp.phone) {
+      setSubmitting(true)
+      const phone = await sendOtpToEmployee(emp)
+      setSubmitting(false)
+      if (phone) {
+        setPendingEmp(emp)
+        setOtpPhone(phone)
+        setOtpCode('')
+        setStep('otp_verify')
+        return
+      }
+    }
     setSubmitting(true)
     await employeeLogin(emp)
+    setSubmitting(false)
+  }
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+    setSubmitting(true)
+    const { error } = await supabase.auth.verifyOtp({ phone: otpPhone, token: otpCode, type: 'sms' })
+    if (error) { setSubmitting(false); return setError('الرمز غير صحيح أو انتهت صلاحيته') }
+    await employeeLogin(pendingEmp)
     setSubmitting(false)
   }
 
@@ -138,9 +193,9 @@ export function EmployeeLogin() {
                   onKeyDown={e => e.key === 'Enter' && handleSetPassword()} />
               </div>
 
-              <button onClick={handleSetPassword} disabled={submitting}
+              <button onClick={handleSetPassword} disabled={submitting || otpSending}
                 className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
-                {submitting ? 'جاري الحفظ...' : 'تعيين وتسجيل الدخول'}
+                {submitting || otpSending ? 'جاري الإرسال...' : 'تعيين وتسجيل الدخول'}
               </button>
               <button onClick={goBack} className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:underline">رجوع</button>
             </>
@@ -168,11 +223,61 @@ export function EmployeeLogin() {
                 </button>
               </div>
 
-              <button onClick={handleLogin}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-                دخول
+              <button onClick={handleLogin} disabled={submitting}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+                {submitting ? 'جاري الإرسال...' : 'دخول'}
               </button>
               <button onClick={goBack} className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:underline">رجوع</button>
+            </>
+          )}
+
+          {/* ── التحقق بـ OTP ── */}
+          {step === 'otp_verify' && (
+            <>
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
+                  <Smartphone size={26} className="text-purple-600 dark:text-purple-400" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز SMS إلى</p>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400 font-mono" dir="ltr">
+                  {maskPhone(otpPhone)}
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
+                placeholder="000000"
+                dir="ltr"
+              />
+
+              <button onClick={handleVerifyOtp} disabled={submitting}
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+                {submitting ? 'جاري التحقق...' : 'تحقق وادخل'}
+              </button>
+
+              <button onClick={async () => {
+                setError('')
+                setOtpSending(true)
+                const { error } = await supabase.auth.signInWithOtp({ phone: otpPhone })
+                setOtpSending(false)
+                if (error) setError('فشل إعادة الإرسال')
+              }} disabled={otpSending}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
+                <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
+                {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
+              </button>
+
+              <button onClick={goBack} className="w-full py-1.5 text-sm text-gray-400 dark:text-gray-500 hover:underline">
+                رجوع
+              </button>
             </>
           )}
 
