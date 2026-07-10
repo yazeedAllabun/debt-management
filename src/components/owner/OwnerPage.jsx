@@ -687,6 +687,21 @@ export function OwnerPage() {
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
             <LogOut size={14} /> خروج
           </button>
+          <button onClick={async () => {
+            if (!window.confirm('هل أنت متأكد من حذف حساب المالك بالكامل؟ لا يمكن التراجع عن هذا الإجراء.')) return
+            await supabase.from('settings').delete().in('key', [
+              'owner_pin', 'owner_session_token', 'owner_name', 'owner_phone',
+              'owner_security_q1', 'owner_security_a1',
+              'owner_security_q2', 'owner_security_a2',
+              'owner_security_q3', 'owner_security_a3',
+            ])
+            ownerLogout()
+            setStoredPin(null); setOwnerName(''); setPin(''); setNameInput('')
+            setStep('setup')
+          }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 text-sm transition-colors">
+            <Trash2 size={14} /> حذف المالك
+          </button>
         </div>
       </div>
 
