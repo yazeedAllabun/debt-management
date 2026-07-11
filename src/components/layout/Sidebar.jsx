@@ -77,7 +77,7 @@ export function Sidebar({ open, onClose }) {
             className={({ isActive }) => linkCls(isActive)}
           >
             <UsersRound size={19} />
-            <span>الموظفون</span>
+            <span>أداء الموظفين</span>
           </NavLink>
         </div>
       )}

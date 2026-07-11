@@ -31,10 +31,16 @@ export function EmployeeSessionProvider({ children }) {
   useEffect(() => {
     const stored = (() => { try { return JSON.parse(localStorage.getItem(KEY)) } catch { return null } })()
     if (!stored?.id) return
-    supabase.from('employees').select('session_token').eq('id', stored.id).single()
+    supabase.from('employees').select('session_token, permissions, role').eq('id', stored.id).single()
       .then(({ data, error }) => {
-        if (!error && data && data.session_token !== stored.session_token) {
-          employeeLogout()
+        if (!error && data) {
+          if (data.session_token !== stored.session_token) {
+            employeeLogout()
+          } else {
+            const updated = { ...stored, permissions: data.permissions, role: data.role }
+            localStorage.setItem(KEY, JSON.stringify(updated))
+            setCurrentEmployee(updated)
+          }
         }
       })
       .catch(() => { /* إذا كان غير متصل ابق الجلسة */ })
@@ -55,9 +61,14 @@ export function EmployeeSessionProvider({ children }) {
         { event: 'UPDATE', schema: 'public', table: 'employees', filter: `id=eq.${currentEmployee.id}` },
         (payload) => {
           const stored = (() => { try { return JSON.parse(localStorage.getItem(KEY)) } catch { return null } })()
-          if (stored && payload.new.session_token !== stored.session_token) {
+          if (!stored) return
+          if (payload.new.session_token !== stored.session_token) {
             employeeLogout()
+            return
           }
+          const updated = { ...stored, permissions: payload.new.permissions, role: payload.new.role }
+          localStorage.setItem(KEY, JSON.stringify(updated))
+          setCurrentEmployee(updated)
         }
       )
       .subscribe()

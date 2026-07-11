@@ -148,11 +148,15 @@ export function OwnerPage() {
   const [editingId, setEditingId]     = useState(null)
   const [editRole, setEditRole]       = useState('')
   const [editPerms, setEditPerms]     = useState([])
-  const [passId, setPassId]           = useState(null)
-  const [newEmpPass, setNewEmpPass]   = useState('')
-  const [confEmpPass, setConfEmpPass] = useState('')
-  const [showEmpPass, setShowEmpPass] = useState(false)
-  const [passError, setPassError]     = useState('')
+  const [passId, setPassId]               = useState(null)
+  const [newEmpPass, setNewEmpPass]       = useState('')
+  const [confEmpPass, setConfEmpPass]     = useState('')
+  const [showEmpPass, setShowEmpPass]     = useState(false)
+  const [passError, setPassError]         = useState('')
+  const [passOtpSent, setPassOtpSent]     = useState(false)
+  const [passOtpCode, setPassOtpCode]     = useState('')
+  const [passOtpVerified, setPassOtpVerified] = useState(false)
+  const [passOtpSending, setPassOtpSending] = useState(false)
 
   useEffect(() => {
     fetchPin()
@@ -650,12 +654,20 @@ export function OwnerPage() {
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => {
+                      <button onClick={async () => {
                         const opening = passId !== emp.id
                         setPassId(opening ? emp.id : null)
                         setNewEmpPass(''); setConfEmpPass(''); setPassError('')
-                        if (opening) setEditingId(null)
-                      }} className={`p-1.5 rounded-lg transition-colors ${passId === emp.id ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`} title="تغيير كلمة المرور">
+                        setPassOtpSent(false); setPassOtpCode(''); setPassOtpVerified(false)
+                        if (opening) {
+                          setEditingId(null)
+                          setPassOtpSending(true)
+                          const email = await fetchOwnerEmail()
+                          if (email) await sendOtp(email)
+                          setPassOtpSending(false)
+                          setPassOtpSent(true)
+                        }
+                      }} disabled={passOtpSending && passId !== emp.id} className={`p-1.5 rounded-lg transition-colors ${passId === emp.id ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`} title="تغيير كلمة المرور">
                         <Key size={15} />
                       </button>
                       <button onClick={() => {
@@ -674,31 +686,68 @@ export function OwnerPage() {
 
                   {passId === emp.id && (
                     <div className="border-t border-gray-100 dark:border-gray-700 bg-amber-50/60 dark:bg-amber-900/10 p-4 space-y-3">
-                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">تعيين كلمة مرور جديدة لـ {emp.name}</p>
+                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">تغيير كلمة مرور {emp.name}</p>
                       {passError && <p className="text-xs text-red-500">{passError}</p>}
-                      <div className="relative">
-                        <input type={showEmpPass ? 'text' : 'password'} value={newEmpPass} onChange={e => setNewEmpPass(e.target.value)} className={inputCls} placeholder="كلمة المرور الجديدة" />
-                        <button onClick={() => setShowEmpPass(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                          {showEmpPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                      <input type="password" value={confEmpPass} onChange={e => setConfEmpPass(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" />
-                      <div className="flex gap-2">
-                        <button onClick={async () => {
-                          if (newEmpPass.length < 4) return setPassError('4 أحرف على الأقل')
-                          if (newEmpPass !== confEmpPass) return setPassError('كلمتا المرور غير متطابقتين')
-                          try {
-                            await updateEmployeePassword(emp.id, btoa(newEmpPass))
-                            setPassId(null); setNewEmpPass(''); setConfEmpPass(''); setPassError('')
-                          } catch (e) { setPassError(e.message) }
-                        }} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-xl transition-colors">
-                          حفظ كلمة المرور
-                        </button>
-                        <button onClick={() => { setPassId(null); setPassError('') }}
-                          className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
-                          إلغاء
-                        </button>
-                      </div>
+                      {passOtpSending && <p className="text-xs text-gray-500">جاري إرسال رمز التحقق...</p>}
+                      {!passOtpVerified ? (
+                        passOtpSent && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">أدخل رمز OTP المُرسَل إلى بريد المالك</p>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={8}
+                              value={passOtpCode}
+                              onChange={e => setPassOtpCode(e.target.value.replace(/\D/g, ''))}
+                              className={`${inputCls} text-center text-xl font-bold tracking-[0.3em]`}
+                              placeholder="000000"
+                              dir="ltr"
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={async () => {
+                                if (passOtpCode.length < 6) return setPassError('أدخل الرمز كاملاً')
+                                const email = await fetchOwnerEmail()
+                                const err = await verifyOtpCode(email, passOtpCode)
+                                if (err) return setPassError('رمز OTP غير صحيح أو انتهت صلاحيته')
+                                setPassError(''); setPassOtpVerified(true)
+                              }} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-xl transition-colors">
+                                تحقق
+                              </button>
+                              <button onClick={() => { setPassId(null); setPassError('') }}
+                                className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
+                                إلغاء
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <input type={showEmpPass ? 'text' : 'password'} value={newEmpPass} onChange={e => setNewEmpPass(e.target.value)} className={inputCls} placeholder="كلمة المرور الجديدة" />
+                            <button onClick={() => setShowEmpPass(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                              {showEmpPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                          </div>
+                          <input type="password" value={confEmpPass} onChange={e => setConfEmpPass(e.target.value)} className={inputCls} placeholder="تأكيد كلمة المرور" />
+                          <div className="flex gap-2">
+                            <button onClick={async () => {
+                              if (newEmpPass.length < 4) return setPassError('4 أحرف على الأقل')
+                              if (newEmpPass !== confEmpPass) return setPassError('كلمتا المرور غير متطابقتين')
+                              try {
+                                await updateEmployeePassword(emp.id, btoa(newEmpPass))
+                                setPassId(null); setNewEmpPass(''); setConfEmpPass(''); setPassError('')
+                                setPassOtpVerified(false); setPassOtpSent(false)
+                              } catch (e) { setPassError(e.message) }
+                            }} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-xl transition-colors">
+                              حفظ كلمة المرور
+                            </button>
+                            <button onClick={() => { setPassId(null); setPassError(''); setPassOtpVerified(false); setPassOtpSent(false) }}
+                              className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm rounded-xl transition-colors">
+                              إلغاء
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
