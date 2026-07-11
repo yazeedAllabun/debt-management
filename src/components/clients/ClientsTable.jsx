@@ -1,8 +1,11 @@
 import { Trash2 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { formatCurrency, formatDate, calcProfit } from '../../utils/formatters'
+import { usePermissions } from '../../hooks/usePermissions'
 
 export function ClientsTable({ clients, onDelete }) {
+  const { can } = usePermissions()
+
   if (clients.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400 dark:text-gray-500">
@@ -42,17 +45,19 @@ export function ClientsTable({ clients, onDelete }) {
               <td className="px-3 py-2.5"><Badge status={c.financing_status} type="financing" /></td>
               <td className="px-3 py-2.5 text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatDate(c.created_at)}</td>
               <td className="px-3 py-2.5 no-print">
-                <button
-                  onClick={() => {
-                    if (window.confirm(`هل تريد حذف العميل "${c.name}"؟`)) {
-                      onDelete(c.id)
-                    }
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  title="حذف العميل"
-                >
-                  <Trash2 size={15} />
-                </button>
+                {can('delete_clients') && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`هل تريد حذف العميل "${c.name}"؟`)) {
+                        onDelete(c.id)
+                      }
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="حذف العميل"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
               </td>
             </tr>
           ))}
