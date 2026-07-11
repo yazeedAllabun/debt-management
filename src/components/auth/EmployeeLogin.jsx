@@ -44,17 +44,27 @@ export function EmployeeLogin() {
   }
 
   const sendOtpToEmployee = async (employee) => {
-    if (!employee.email) return null
+    if (!employee.email) return { email: null, error: null }
     const email = employee.email.trim().toLowerCase()
-    const { error } = await supabase.auth.signInWithOtp({ email })
-    return error ? null : email
+    const { error } = await supabase.functions.invoke('send-otp', {
+      body: { employee_id: employee.id, email },
+    })
+    return { email: error ? null : email, error: error || null }
   }
 
   const handleVerifyOtp = async () => {
     if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
     setSubmitting(true)
-    const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
-    if (error) { setSubmitting(false); return setError('الرمز غير صحيح أو انتهت صلاحيته') }
+    const { data, error } = await supabase
+      .from('employees')
+      .select('otp_code, otp_expires_at')
+      .eq('id', pendingEmp.id)
+      .single()
+    if (error || !data?.otp_code) { setSubmitting(false); return setError('حدث خطأ، حاول مجدداً') }
+    if (data.otp_code !== otpCode) { setSubmitting(false); return setError('الرمز غير صحيح') }
+    if (new Date(data.otp_expires_at) < new Date()) { setSubmitting(false); return setError('انتهت صلاحية الرمز، اطلب رمزاً جديداً') }
+    // Clear OTP after successful verification
+    await supabase.from('employees').update({ otp_code: null, otp_expires_at: null }).eq('id', pendingEmp.id)
     await employeeLogin(pendingEmp)
     setSubmitting(false)
   }
@@ -74,8 +84,9 @@ export function EmployeeLogin() {
 
     if (data.email) {
       setOtpSending(true)
-      const email = await sendOtpToEmployee(data)
+      const { email, error: otpErr } = await sendOtpToEmployee(data)
       setOtpSending(false)
+      if (otpErr) { setSubmitting(false); return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`) }
       if (email) {
         setPendingEmp(data); setOtpEmail(email); setOtpCode('')
         setError(''); setSubmitting(false); setStep('otp_verify'); return
@@ -91,8 +102,9 @@ export function EmployeeLogin() {
     setError('')
     if (emp.email) {
       setSubmitting(true)
-      const email = await sendOtpToEmployee(emp)
+      const { email, error: otpErr } = await sendOtpToEmployee(emp)
       setSubmitting(false)
+      if (otpErr) return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`)
       if (email) {
         setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setStep('otp_verify'); return
       }
@@ -110,8 +122,9 @@ export function EmployeeLogin() {
       return
     }
     setSubmitting(true)
-    const email = await sendOtpToEmployee(emp)
+    const { email, error: otpErr } = await sendOtpToEmployee(emp)
     setSubmitting(false)
+    if (otpErr) return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`)
     if (!email) return setError('فشل إرسال رمز التحقق، حاول مجدداً')
     setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setError(''); setStep('forgot_otp')
   }
@@ -119,9 +132,16 @@ export function EmployeeLogin() {
   const handleForgotOtpVerify = async () => {
     if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
     setSubmitting(true)
-    const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
+    const { data, error } = await supabase
+      .from('employees')
+      .select('otp_code, otp_expires_at')
+      .eq('id', pendingEmp.id)
+      .single()
     setSubmitting(false)
-    if (error) return setError('الرمز غير صحيح أو انتهت صلاحيته')
+    if (error || !data?.otp_code) return setError('حدث خطأ، حاول مجدداً')
+    if (data.otp_code !== otpCode) return setError('الرمز غير صحيح')
+    if (new Date(data.otp_expires_at) < new Date()) return setError('انتهت صلاحية الرمز، اطلب رمزاً جديداً')
+    await supabase.from('employees').update({ otp_code: null, otp_expires_at: null }).eq('id', pendingEmp.id)
     setError(''); setPass(''); setConf(''); setStep('reset_password')
   }
 
@@ -293,8 +313,9 @@ export function EmployeeLogin() {
 
               <button onClick={async () => {
                 setError(''); setOtpSending(true)
-                await supabase.auth.signInWithOtp({ email: otpEmail })
+                const { error: otpErr } = await sendOtpToEmployee(pendingEmp)
                 setOtpSending(false)
+                if (otpErr) setError(`فشل الإرسال: ${otpErr.message}`)
               }} disabled={otpSending}
                 className="w-full flex items-center justify-center gap-2 py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline disabled:opacity-50">
                 <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
@@ -374,8 +395,9 @@ export function EmployeeLogin() {
 
               <button onClick={async () => {
                 setError(''); setOtpSending(true)
-                await supabase.auth.signInWithOtp({ email: otpEmail })
+                const { error: otpErr } = await sendOtpToEmployee(pendingEmp)
                 setOtpSending(false)
+                if (otpErr) setError(`فشل الإرسال: ${otpErr.message}`)
               }} disabled={otpSending}
                 className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
                 <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
