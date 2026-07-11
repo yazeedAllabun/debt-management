@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useClients } from '../../hooks/useClients'
+import { usePermissions } from '../../hooks/usePermissions'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
+import { Lock } from 'lucide-react'
 import { formatCurrency, formatNumber, calcProfit } from '../../utils/formatters'
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { ar } from 'date-fns/locale'
@@ -40,6 +42,7 @@ function buildMonthlyReport(clients) {
 }
 
 export function ReportsPage() {
+  const { can } = usePermissions()
   const { clients, loading, error } = useClients()
   const monthlyData = useMemo(() => buildMonthlyReport(clients), [clients])
 
@@ -55,6 +58,12 @@ export function ReportsPage() {
 
   if (loading) return <LoadingSpinner text="جاري تحميل التقارير..." />
   if (error) return <div className="text-center py-20 text-red-500">خطأ: {error}</div>
+  if (!can('view_reports')) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <Lock size={40} className="text-gray-300 dark:text-gray-600" />
+      <p className="text-gray-500 dark:text-gray-400">ليس لديك صلاحية لعرض التقارير</p>
+    </div>
+  )
 
   return (
     <div className="space-y-6">

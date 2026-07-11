@@ -12,6 +12,7 @@ import { ClaudeCalculatorPage } from './components/claude-calculator/ClaudeCalcu
 import { CalculationsPage } from './components/calculations/CalculationsPage'
 import { EmployeesPage } from './components/employees/EmployeesPage'
 import { EditClientPage } from './components/edit-client/EditClientPage'
+import { SettingsPage } from './components/settings/SettingsPage'
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="calculations" element={<CalculationsPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="edit-client/:id" element={<EditClientPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

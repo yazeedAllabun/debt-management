@@ -1,8 +1,10 @@
 import { Search, FileDown, Printer } from 'lucide-react'
 import { exportToExcel } from '../../utils/exportToExcel'
 import { printReport } from '../../utils/printReport'
+import { usePermissions } from '../../hooks/usePermissions'
 
 export function ClientsToolbar({ search, onSearch, statusFilter, onStatusFilter, clients }) {
+  const { can } = usePermissions()
   return (
     <div className="no-print flex flex-wrap items-center gap-3">
       {/* Search */}
@@ -29,13 +31,15 @@ export function ClientsToolbar({ search, onSearch, statusFilter, onStatusFilter,
       </select>
 
       {/* Export Excel */}
-      <button
-        onClick={() => exportToExcel(clients)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
-      >
-        <FileDown size={16} />
-        تصدير Excel
-      </button>
+      {can('export_excel') && (
+        <button
+          onClick={() => exportToExcel(clients)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+        >
+          <FileDown size={16} />
+          تصدير Excel
+        </button>
+      )}
 
       {/* Print */}
       <button

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, Lock } from 'lucide-react'
 import { useClients } from '../../hooks/useClients'
+import { usePermissions } from '../../hooks/usePermissions'
 import { ClientsTable } from './ClientsTable'
 import { ClientsToolbar } from './ClientsToolbar'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 export function ClientsPage() {
+  const { can } = usePermissions()
   const { clients, loading, error, deleteClient } = useClients()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -23,6 +25,12 @@ export function ClientsPage() {
 
   if (loading) return <LoadingSpinner text="جاري تحميل العملاء..." />
   if (error) return <div className="text-center py-20 text-red-500">خطأ: {error}</div>
+  if (!can('view_clients')) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <Lock size={40} className="text-gray-300 dark:text-gray-600" />
+      <p className="text-gray-500 dark:text-gray-400">ليس لديك صلاحية لعرض العملاء</p>
+    </div>
+  )
 
   return (
     <div className="space-y-5">
@@ -31,13 +39,15 @@ export function ClientsPage() {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">العملاء</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">إجمالي {clients.length} عميل</p>
         </div>
-        <button
-          onClick={() => navigate('/add-client')}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
-        >
-          <UserPlus size={16} />
-          إضافة عميل
-        </button>
+        {can('add_clients') && (
+          <button
+            onClick={() => navigate('/add-client')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            <UserPlus size={16} />
+            إضافة عميل
+          </button>
+        )}
       </div>
 
       <ClientsToolbar

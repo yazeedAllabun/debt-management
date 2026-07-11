@@ -8,6 +8,8 @@ import { CheckCircle, AlertCircle, Calculator } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
+import { usePermissions } from '../../hooks/usePermissions'
+import { Lock } from 'lucide-react'
 
 const BANKS = [
   'الراجحي', 'الأهلي', 'الرياض', 'البلاد', 'الإنماء',
@@ -38,6 +40,7 @@ const inputCls =
   'w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
 export function AddClientPage() {
+  const { can } = usePermissions()
   const { addClient } = useClients()
   const navigate = useNavigate()
   const location = useLocation()
@@ -118,6 +121,13 @@ export function AddClientPage() {
       setSubmitStatus('error')
     }
   }
+
+  if (!can('add_clients')) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <Lock size={40} className="text-gray-300 dark:text-gray-600" />
+      <p className="text-gray-500 dark:text-gray-400">ليس لديك صلاحية لإضافة عملاء</p>
+    </div>
+  )
 
   return (
     <div className="max-w-2xl">

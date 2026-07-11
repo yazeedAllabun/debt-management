@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, Pencil, Key, Mail, RefreshCw } from 'lucide-react'
+import { LogOut, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowLeft, UserPlus, Trash2, Users, Pencil, Key, Mail, RefreshCw, Settings } from 'lucide-react'
 
 /* ─── Helpers ─── */
 const fetchPin = async () => {
@@ -546,15 +546,9 @@ export function OwnerPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={async () => {
-            const em = await fetchOwnerEmail()
-            setEmailInput(em || ''); setError(''); setFromDashboard(true); setStep('setupPhone')
-          }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
-            <Mail size={14} /> البريد / OTP
-          </button>
-          <button onClick={() => { setStep('change'); setPin(''); setError('') }}
+          <button onClick={() => navigate('/settings')}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors">
-            <KeyRound size={14} /> تغيير كلمة المرور
+            <Settings size={14} /> الإعدادات
           </button>
           <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
