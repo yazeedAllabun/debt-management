@@ -190,10 +190,8 @@ export function RetirementCalc({ day, month, year, text, rank, onChange }) {
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={s}>المتبقي للتقاعد</span>
-              <strong style={{ color: 'var(--accent)' }}>
-                {result.years > 0 ? `${result.years} سنة ` : ''}
-                {result.months > 0 ? `و${result.months} شهر ` : ''}
-                <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({result.total} شهر)</span>
+              <strong style={{ color: 'var(--accent)', fontSize: '15px' }}>
+                {result.total} شهر
               </strong>
             </div>
           )}
