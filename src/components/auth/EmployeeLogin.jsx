@@ -12,23 +12,28 @@ const maskEmail = (email) => {
   return user.slice(0, 2) + '***@' + domain
 }
 
+const fetchOwnerEmail = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'owner_email').single()
+  return data?.value || null
+}
+
 export function EmployeeLogin() {
   const navigate = useNavigate()
   const { employeeLogin } = useEmployeeSession()
 
-  const [employees, setEmployees] = useState([])
+  const [employees, setEmployees]     = useState([])
   const [loadingEmps, setLoadingEmps] = useState(true)
   const [selectedId, setSelectedId]   = useState('')
-  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'otp_verify' | 'forgot_otp' | 'reset_password'
-  const [password, setPass] = useState('')
-  const [confirm, setConf]  = useState('')
-  const [showPass, setShow] = useState(false)
-  const [error, setError]   = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [otpCode, setOtpCode]       = useState('')
-  const [otpSending, setOtpSending] = useState(false)
-  const [otpEmail, setOtpEmail]     = useState('')
-  const [pendingEmp, setPendingEmp] = useState(null)
+  const [step, setStep]               = useState('select') // 'select' | 'set_password' | 'enter_password' | 'forgot_otp' | 'reset_password'
+  const [password, setPass]           = useState('')
+  const [confirm, setConf]            = useState('')
+  const [showPass, setShow]           = useState(false)
+  const [error, setError]             = useState('')
+  const [submitting, setSubmitting]   = useState(false)
+  const [otpCode, setOtpCode]         = useState('')
+  const [otpSending, setOtpSending]   = useState(false)
+  const [otpEmail, setOtpEmail]       = useState('')
+  const [pendingEmp, setPendingEmp]   = useState(null)
 
   useEffect(() => {
     supabase.from('employees').select('*').order('created_at', { ascending: false })
@@ -43,63 +48,17 @@ export function EmployeeLogin() {
     setStep(emp.password ? 'enter_password' : 'set_password')
   }
 
-  const sendOtpToEmployee = async (employee) => {
-    if (!employee.email) return { email: null, error: null }
-    const email = employee.email.trim().toLowerCase()
-    try {
-      const res = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employee_id: employee.id, email }),
-      })
-      const data = await res.json()
-      if (!res.ok) return { email: null, error: { message: data.error || 'فشل الإرسال' } }
-      return { email, error: null }
-    } catch (e) {
-      return { email: null, error: { message: e.message } }
-    }
-  }
-
-  const handleVerifyOtp = async () => {
-    if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
-    setSubmitting(true)
-    const { data, error } = await supabase
-      .from('employees')
-      .select('otp_code, otp_expires_at')
-      .eq('id', pendingEmp.id)
-      .single()
-    if (error || !data?.otp_code) { setSubmitting(false); return setError('حدث خطأ، حاول مجدداً') }
-    if (data.otp_code !== otpCode) { setSubmitting(false); return setError('الرمز غير صحيح') }
-    if (new Date(data.otp_expires_at) < new Date()) { setSubmitting(false); return setError('انتهت صلاحية الرمز، اطلب رمزاً جديداً') }
-    // Clear OTP after successful verification
-    await supabase.from('employees').update({ otp_code: null, otp_expires_at: null }).eq('id', pendingEmp.id)
-    await employeeLogin(pendingEmp)
-    setSubmitting(false)
-  }
-
   const handleSetPassword = async () => {
     if (password.length < 4) return setError('كلمة المرور يجب أن تكون 4 أحرف على الأقل')
     if (password !== confirm) return setError('كلمتا المرور غير متطابقتين')
     setSubmitting(true)
-    const encoded = btoa(password)
     const { data, error } = await supabase
       .from('employees')
-      .update({ password: encoded })
+      .update({ password: btoa(password) })
       .eq('id', emp.id)
       .select()
       .single()
     if (error) { setSubmitting(false); return setError('حدث خطأ، حاول مجدداً') }
-
-    if (data.email) {
-      setOtpSending(true)
-      const { email, error: otpErr } = await sendOtpToEmployee(data)
-      setOtpSending(false)
-      if (otpErr) { setSubmitting(false); return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`) }
-      if (email) {
-        setPendingEmp(data); setOtpEmail(email); setOtpCode('')
-        setError(''); setSubmitting(false); setStep('otp_verify'); return
-      }
-    }
     await employeeLogin(data)
     setSubmitting(false)
   }
@@ -107,49 +66,31 @@ export function EmployeeLogin() {
   const handleLogin = async () => {
     if (!password) return setError('أدخل كلمة المرور')
     if (atob(emp.password) !== password) return setError('كلمة المرور غير صحيحة')
-    setError('')
-    if (emp.email) {
-      setSubmitting(true)
-      const { email, error: otpErr } = await sendOtpToEmployee(emp)
-      setSubmitting(false)
-      if (otpErr) return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`)
-      if (email) {
-        setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setStep('otp_verify'); return
-      }
-    }
     setSubmitting(true)
     await employeeLogin(emp)
     setSubmitting(false)
   }
 
-  const goBack = () => { setStep('select'); setError(''); setPass(''); setConf('') }
-
   const handleForgotPassword = async () => {
-    if (!emp?.email) {
-      setError('لا يوجد بريد إلكتروني مسجّل — تواصل مع المالك لإعادة تعيين كلمة المرور')
-      return
-    }
     setSubmitting(true)
-    const { email, error: otpErr } = await sendOtpToEmployee(emp)
+    const email = await fetchOwnerEmail()
+    if (!email) {
+      setSubmitting(false)
+      return setError('لم يُضبط بريد المالك — تواصل معه مباشرة لإعادة تعيين كلمة المرور')
+    }
+    const { error: otpErr } = await supabase.auth.signInWithOtp({ email })
     setSubmitting(false)
-    if (otpErr) return setError(`فشل إرسال رمز التحقق: ${otpErr.message}`)
-    if (!email) return setError('فشل إرسال رمز التحقق، حاول مجدداً')
-    setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setError(''); setStep('forgot_otp')
+    if (otpErr) return setError('فشل إرسال الرمز: ' + otpErr.message)
+    setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setError('')
+    setStep('forgot_otp')
   }
 
   const handleForgotOtpVerify = async () => {
     if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
     setSubmitting(true)
-    const { data, error } = await supabase
-      .from('employees')
-      .select('otp_code, otp_expires_at')
-      .eq('id', pendingEmp.id)
-      .single()
+    const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
     setSubmitting(false)
-    if (error || !data?.otp_code) return setError('حدث خطأ، حاول مجدداً')
-    if (data.otp_code !== otpCode) return setError('الرمز غير صحيح')
-    if (new Date(data.otp_expires_at) < new Date()) return setError('انتهت صلاحية الرمز، اطلب رمزاً جديداً')
-    await supabase.from('employees').update({ otp_code: null, otp_expires_at: null }).eq('id', pendingEmp.id)
+    if (error) return setError('الرمز غير صحيح أو انتهت صلاحيته')
     setError(''); setPass(''); setConf(''); setStep('reset_password')
   }
 
@@ -167,6 +108,8 @@ export function EmployeeLogin() {
     await employeeLogin(data)
     setSubmitting(false)
   }
+
+  const goBack = () => { setStep('select'); setError(''); setPass(''); setConf('') }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
@@ -244,9 +187,9 @@ export function EmployeeLogin() {
                   onKeyDown={e => e.key === 'Enter' && handleSetPassword()} />
               </div>
 
-              <button onClick={handleSetPassword} disabled={submitting || otpSending}
+              <button onClick={handleSetPassword} disabled={submitting}
                 className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
-                {submitting || otpSending ? 'جاري الإرسال...' : 'تعيين وتسجيل الدخول'}
+                {submitting ? 'جاري الحفظ...' : 'تعيين وتسجيل الدخول'}
               </button>
               <button onClick={goBack} className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:underline">رجوع</button>
             </>
@@ -276,7 +219,7 @@ export function EmployeeLogin() {
 
               <button onClick={handleLogin} disabled={submitting}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
-                {submitting ? 'جاري الإرسال...' : 'دخول'}
+                {submitting ? 'جاري الدخول...' : 'دخول'}
               </button>
               <button onClick={handleForgotPassword} disabled={submitting}
                 className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50">
@@ -286,7 +229,7 @@ export function EmployeeLogin() {
             </>
           )}
 
-          {/* ── نسيت كلمة المرور — OTP ── */}
+          {/* ── نسيت كلمة المرور — OTP لبريد المالك ── */}
           {step === 'forgot_otp' && (
             <>
               <div className="text-center space-y-2">
@@ -294,24 +237,20 @@ export function EmployeeLogin() {
                   <Mail size={26} className="text-orange-500 dark:text-orange-400" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">استعادة كلمة المرور</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز 6 أرقام إلى</p>
-                <p className="text-sm font-medium text-orange-500 dark:text-orange-400" dir="ltr">
-                  {maskEmail(otpEmail)}
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز التحقق لبريد المالك</p>
+                <p className="text-sm font-medium text-orange-500 dark:text-orange-400" dir="ltr">{maskEmail(otpEmail)}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 bg-orange-50 dark:bg-orange-900/20 rounded-lg px-3 py-2">
+                  تواصل مع المالك للحصول على الرمز
                 </p>
               </div>
 
               {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
 
               <input
-                type="text"
-                inputMode="numeric"
-                maxLength={8}
-                value={otpCode}
+                type="text" inputMode="numeric" maxLength={8} value={otpCode}
                 onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
                 className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
-                placeholder="00000000"
-                dir="ltr"
-                autoFocus
+                placeholder="000000" dir="ltr" autoFocus
               />
 
               <button onClick={handleForgotOtpVerify} disabled={submitting}
@@ -321,9 +260,8 @@ export function EmployeeLogin() {
 
               <button onClick={async () => {
                 setError(''); setOtpSending(true)
-                const { error: otpErr } = await sendOtpToEmployee(pendingEmp)
+                await supabase.auth.signInWithOtp({ email: otpEmail })
                 setOtpSending(false)
-                if (otpErr) setError(`فشل الإرسال: ${otpErr.message}`)
               }} disabled={otpSending}
                 className="w-full flex items-center justify-center gap-2 py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline disabled:opacity-50">
                 <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
@@ -335,7 +273,7 @@ export function EmployeeLogin() {
             </>
           )}
 
-          {/* ── إعادة تعيين كلمة المرور بعد OTP ── */}
+          {/* ── إعادة تعيين كلمة المرور ── */}
           {step === 'reset_password' && (
             <>
               <div className="text-center space-y-2">
@@ -364,56 +302,6 @@ export function EmployeeLogin() {
               <button onClick={handleResetPassword} disabled={submitting}
                 className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
                 {submitting ? 'جاري الحفظ...' : 'حفظ وتسجيل الدخول'}
-              </button>
-            </>
-          )}
-
-          {/* ── التحقق بـ OTP ── */}
-          {step === 'otp_verify' && (
-            <>
-              <div className="text-center space-y-2">
-                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mx-auto">
-                  <Mail size={26} className="text-purple-600 dark:text-purple-400" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">رمز التحقق</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز 6 أرقام إلى</p>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400" dir="ltr">
-                  {maskEmail(otpEmail)}
-                </p>
-              </div>
-
-              {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
-
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={8}
-                value={otpCode}
-                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
-                placeholder="00000000"
-                dir="ltr"
-                autoFocus
-              />
-
-              <button onClick={handleVerifyOtp} disabled={submitting}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
-                {submitting ? 'جاري التحقق...' : 'تحقق وادخل'}
-              </button>
-
-              <button onClick={async () => {
-                setError(''); setOtpSending(true)
-                const { error: otpErr } = await sendOtpToEmployee(pendingEmp)
-                setOtpSending(false)
-                if (otpErr) setError(`فشل الإرسال: ${otpErr.message}`)
-              }} disabled={otpSending}
-                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-purple-500 dark:text-purple-400 hover:underline disabled:opacity-50">
-                <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
-                {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
-              </button>
-
-              <button onClick={goBack} className="w-full py-1.5 text-sm text-gray-400 dark:text-gray-500 hover:underline">
-                رجوع
               </button>
             </>
           )}
