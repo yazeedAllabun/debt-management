@@ -11,6 +11,8 @@ serve(async (req) => {
 
   try {
     const { employee_id, email } = await req.json()
+    console.log('send-otp called for employee_id:', employee_id, 'email:', email)
+
     if (!employee_id || !email) {
       return new Response(JSON.stringify({ error: 'employee_id and email required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -19,29 +21,37 @@ serve(async (req) => {
 
     // Generate 6-digit OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000))
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
     // Store OTP in employees table
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    console.log('SUPABASE_URL set:', !!supabaseUrl, '| SERVICE_ROLE_KEY set:', !!serviceKey)
+
+    const supabase = createClient(supabaseUrl!, serviceKey!)
     const { error: dbErr } = await supabase
       .from('employees')
       .update({ otp_code: otp, otp_expires_at: expiresAt })
       .eq('id', employee_id)
 
-    if (dbErr) throw new Error(dbErr.message)
+    if (dbErr) {
+      console.error('DB error:', dbErr.message)
+      throw new Error('DB error: ' + dbErr.message)
+    }
+    console.log('OTP stored in DB')
 
     // Send via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY')
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev'
+    console.log('RESEND_API_KEY set:', !!resendKey, '| from:', fromEmail)
+
     if (!resendKey) throw new Error('RESEND_API_KEY not set')
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com',
+        from: fromEmail,
         to: [email],
         subject: 'رمز التحقق — راكان للتمويل',
         html: `
@@ -57,15 +67,19 @@ serve(async (req) => {
       }),
     })
 
+    const resendBody = await res.json()
+    console.log('Resend response status:', res.status, '| body:', JSON.stringify(resendBody))
+
     if (!res.ok) {
-      const body = await res.json()
-      throw new Error(body.message || 'Resend error')
+      throw new Error(resendBody.message || resendBody.name || 'Resend error ' + res.status)
     }
 
+    console.log('OTP sent successfully')
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {
+    console.error('send-otp error:', e.message)
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
