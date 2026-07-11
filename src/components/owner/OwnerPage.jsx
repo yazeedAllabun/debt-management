@@ -148,6 +148,7 @@ export function OwnerPage() {
   const [editingId, setEditingId]     = useState(null)
   const [editRole, setEditRole]       = useState('')
   const [editPerms, setEditPerms]     = useState([])
+  const [editEmail, setEditEmail]     = useState('')
   const [passId, setPassId]               = useState(null)
   const [newEmpPass, setNewEmpPass]       = useState('')
   const [confEmpPass, setConfEmpPass]     = useState('')
@@ -673,7 +674,7 @@ export function OwnerPage() {
                       <button onClick={() => {
                         const opening = editingId !== emp.id
                         setEditingId(opening ? emp.id : null)
-                        if (opening) { setEditRole(emp.role); setEditPerms(emp.permissions || []); setPassId(null) }
+                        if (opening) { setEditRole(emp.role); setEditPerms(emp.permissions || []); setEditEmail(emp.email || ''); setPassId(null) }
                       }} className={`p-1.5 rounded-lg transition-colors ${editingId === emp.id ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`} title="تعديل الصلاحيات">
                         <Pencil size={15} />
                       </button>
@@ -753,14 +754,27 @@ export function OwnerPage() {
 
                   {editingId === emp.id && (
                     <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4 space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">المسمى الوظيفي</p>
-                        <select value={editRole} onChange={e => setEditRole(e.target.value)} className={inputCls}>
-                          <option>موظف</option>
-                          <option>مشرف</option>
-                          <option>محاسب</option>
-                          <option>مدير</option>
-                        </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">المسمى الوظيفي</p>
+                          <select value={editRole} onChange={e => setEditRole(e.target.value)} className={inputCls}>
+                            <option>موظف</option>
+                            <option>مشرف</option>
+                            <option>محاسب</option>
+                            <option>مدير</option>
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">البريد الإلكتروني (للـ OTP)</p>
+                          <input
+                            type="email"
+                            value={editEmail}
+                            onChange={e => setEditEmail(e.target.value)}
+                            className={inputCls}
+                            placeholder="example@gmail.com"
+                            dir="ltr"
+                          />
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">الصلاحيات</p>
@@ -777,7 +791,9 @@ export function OwnerPage() {
                       <div className="flex gap-2 pt-1">
                         <button onClick={async () => {
                           try {
-                            await updateEmployee(emp.id, { role: editRole, permissions: editPerms })
+                            const emailVal = editEmail.trim().toLowerCase() || null
+                            if (emailVal && !emailVal.includes('@')) return setError('البريد الإلكتروني غير صحيح')
+                            await updateEmployee(emp.id, { role: editRole, permissions: editPerms, email: emailVal })
                             setEditingId(null)
                           } catch (e) { setError(e.message) }
                         }} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">

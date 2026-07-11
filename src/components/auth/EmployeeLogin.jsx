@@ -19,7 +19,7 @@ export function EmployeeLogin() {
   const [employees, setEmployees] = useState([])
   const [loadingEmps, setLoadingEmps] = useState(true)
   const [selectedId, setSelectedId]   = useState('')
-  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'otp_verify'
+  const [step, setStep]   = useState('select') // 'select' | 'set_password' | 'enter_password' | 'otp_verify' | 'forgot_otp' | 'reset_password'
   const [password, setPass] = useState('')
   const [confirm, setConf]  = useState('')
   const [showPass, setShow] = useState(false)
@@ -103,6 +103,42 @@ export function EmployeeLogin() {
   }
 
   const goBack = () => { setStep('select'); setError(''); setPass(''); setConf('') }
+
+  const handleForgotPassword = async () => {
+    if (!emp?.email) {
+      setError('لا يوجد بريد إلكتروني مسجّل — تواصل مع المالك لإعادة تعيين كلمة المرور')
+      return
+    }
+    setSubmitting(true)
+    const email = await sendOtpToEmployee(emp)
+    setSubmitting(false)
+    if (!email) return setError('فشل إرسال رمز التحقق، حاول مجدداً')
+    setPendingEmp(emp); setOtpEmail(email); setOtpCode(''); setError(''); setStep('forgot_otp')
+  }
+
+  const handleForgotOtpVerify = async () => {
+    if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
+    setSubmitting(true)
+    const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
+    setSubmitting(false)
+    if (error) return setError('الرمز غير صحيح أو انتهت صلاحيته')
+    setError(''); setPass(''); setConf(''); setStep('reset_password')
+  }
+
+  const handleResetPassword = async () => {
+    if (password.length < 4) return setError('كلمة المرور يجب أن تكون 4 أحرف على الأقل')
+    if (password !== confirm) return setError('كلمتا المرور غير متطابقتين')
+    setSubmitting(true)
+    const { data, error } = await supabase
+      .from('employees')
+      .update({ password: btoa(password) })
+      .eq('id', pendingEmp.id)
+      .select()
+      .single()
+    if (error) { setSubmitting(false); return setError('حدث خطأ، حاول مجدداً') }
+    await employeeLogin(data)
+    setSubmitting(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
@@ -214,7 +250,92 @@ export function EmployeeLogin() {
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
                 {submitting ? 'جاري الإرسال...' : 'دخول'}
               </button>
+              <button onClick={handleForgotPassword} disabled={submitting}
+                className="w-full py-1.5 text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50">
+                نسيت كلمة المرور؟
+              </button>
               <button onClick={goBack} className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:underline">رجوع</button>
+            </>
+          )}
+
+          {/* ── نسيت كلمة المرور — OTP ── */}
+          {step === 'forgot_otp' && (
+            <>
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/40 rounded-2xl flex items-center justify-center mx-auto">
+                  <Mail size={26} className="text-orange-500 dark:text-orange-400" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">استعادة كلمة المرور</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز 6 أرقام إلى</p>
+                <p className="text-sm font-medium text-orange-500 dark:text-orange-400" dir="ltr">
+                  {maskEmail(otpEmail)}
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={8}
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
+                placeholder="00000000"
+                dir="ltr"
+                autoFocus
+              />
+
+              <button onClick={handleForgotOtpVerify} disabled={submitting}
+                className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+                {submitting ? 'جاري التحقق...' : 'تحقق'}
+              </button>
+
+              <button onClick={async () => {
+                setError(''); setOtpSending(true)
+                await supabase.auth.signInWithOtp({ email: otpEmail })
+                setOtpSending(false)
+              }} disabled={otpSending}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-orange-500 dark:text-orange-400 hover:underline disabled:opacity-50">
+                <RefreshCw size={13} className={otpSending ? 'animate-spin' : ''} />
+                {otpSending ? 'جاري الإرسال...' : 'إعادة إرسال الرمز'}
+              </button>
+
+              <button onClick={() => { setStep('enter_password'); setOtpCode(''); setError('') }}
+                className="w-full py-1.5 text-sm text-gray-400 dark:text-gray-500 hover:underline">رجوع</button>
+            </>
+          )}
+
+          {/* ── إعادة تعيين كلمة المرور بعد OTP ── */}
+          {step === 'reset_password' && (
+            <>
+              <div className="text-center space-y-2">
+                <div className="w-14 h-14 bg-green-100 dark:bg-green-900/40 rounded-2xl flex items-center justify-center mx-auto">
+                  <KeyRound size={26} className="text-green-600 dark:text-green-400" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">كلمة مرور جديدة</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">تم التحقق — اختر كلمة مرور جديدة</p>
+              </div>
+
+              {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg text-center">{error}</p>}
+
+              <div className="space-y-3">
+                <div className="relative">
+                  <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPass(e.target.value)}
+                    className={inputCls} placeholder="كلمة المرور الجديدة" />
+                  <button onClick={() => setShow(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <input type="password" value={confirm} onChange={e => setConf(e.target.value)}
+                  className={inputCls} placeholder="تأكيد كلمة المرور"
+                  onKeyDown={e => e.key === 'Enter' && handleResetPassword()} />
+              </div>
+
+              <button onClick={handleResetPassword} disabled={submitting}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-xl transition-colors">
+                {submitting ? 'جاري الحفظ...' : 'حفظ وتسجيل الدخول'}
+              </button>
             </>
           )}
 
