@@ -395,12 +395,12 @@ export function OwnerPage() {
           <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-0.5" dir="ltr">{maskEmail(loginEmail)}</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
-        <input type="text" inputMode="numeric" maxLength={6} value={otpCode}
+        <input type="text" inputMode="numeric" maxLength={8} value={otpCode}
           onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-          className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
-          placeholder="000000" dir="ltr" autoFocus />
+          className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
+          placeholder="00000000" dir="ltr" autoFocus />
         <button onClick={async () => {
-          if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+          if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
           const err = await verifyOtpCode(loginEmail, otpCode)
           if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
           setError(''); await ownerLogin(); setStep('dashboard')
@@ -434,12 +434,12 @@ export function OwnerPage() {
           <p className="text-sm font-medium text-orange-500 dark:text-orange-400 mt-0.5" dir="ltr">{maskEmail(loginEmail)}</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
-        <input type="text" inputMode="numeric" maxLength={6} value={otpCode}
+        <input type="text" inputMode="numeric" maxLength={8} value={otpCode}
           onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-          className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
-          placeholder="000000" dir="ltr" autoFocus />
+          className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
+          placeholder="00000000" dir="ltr" autoFocus />
         <button onClick={async () => {
-          if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+          if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
           const err = await verifyOtpCode(loginEmail, otpCode)
           if (err) return setError('الرمز غير صحيح أو انتهت صلاحيته')
           setError(''); setNewPin(''); setConfirmNew(''); setStep('resetPin')

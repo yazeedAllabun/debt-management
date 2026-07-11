@@ -51,7 +51,7 @@ export function EmployeeLogin() {
   }
 
   const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) return setError('أدخل الرمز المكوّن من 6 أرقام')
+    if (otpCode.length < 6) return setError('أدخل الرمز كاملاً')
     setSubmitting(true)
     const { error } = await supabase.auth.verifyOtp({ email: otpEmail, token: otpCode, type: 'email' })
     if (error) { setSubmitting(false); return setError('الرمز غير صحيح أو انتهت صلاحيته') }
@@ -237,11 +237,11 @@ export function EmployeeLogin() {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={8}
                 value={otpCode}
                 onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em]`}
-                placeholder="000000"
+                className={`${inputCls} text-center text-2xl font-bold tracking-[0.3em]`}
+                placeholder="00000000"
                 dir="ltr"
                 autoFocus
               />
