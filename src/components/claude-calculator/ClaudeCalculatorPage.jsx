@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { muhtasibCSS } from './muhtasibStyles.js'
 import { useCalculations } from '../../hooks/useCalculations'
 import { useClients } from '../../hooks/useClients'
+import { RetirementCalc } from './RetirementCalc.jsx'
 
 export function ClaudeCalculatorPage() {
   const { theme } = useTheme()
@@ -18,6 +19,9 @@ export function ClaudeCalculatorPage() {
   const [savedCalc, setSavedCalc] = useState(null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+
+  // Shared retirement calc state (same data across both panels)
+  const [retirement, setRetirement] = useState({ day: '', month: '', year: '', text: '', rank: '' })
 
   // Auto-select client when navigated from ClientsTable
   useEffect(() => {
@@ -225,6 +229,7 @@ export function ClaudeCalculatorPage() {
                   <label>رقم الجوال</label>
                   <input id="p_mobile" type="tel" placeholder="05xxxxxxxx" inputMode="numeric" />
                 </div>
+                <RetirementCalc {...retirement} onChange={setRetirement} />
                 <div className="field">
                   <label>المبلغ المراد سداده</label>
                   <input id="p_payoff" type="number" min="0" step="0.01" placeholder="اختياري" />
@@ -334,6 +339,7 @@ export function ClaudeCalculatorPage() {
                   <label>رقم الجوال</label>
                   <input id="f_mobile" type="tel" placeholder="05xxxxxxxx" inputMode="numeric" />
                 </div>
+                <RetirementCalc {...retirement} onChange={setRetirement} />
                 <div className="field">
                   <label>المبلغ المراد سداده</label>
                   <input id="f_payoff" type="number" min="0" step="0.01" placeholder="اختياري" />
