@@ -46,18 +46,18 @@ export function EmployeeLogin() {
   const sendOtpToEmployee = async (employee) => {
     if (!employee.email) return { email: null, error: null }
     const email = employee.email.trim().toLowerCase()
-    const { error } = await supabase.functions.invoke('send-otp', {
-      body: { employee_id: employee.id, email },
-    })
-    if (error) {
-      let message = error.message
-      try {
-        const body = await error.context?.json()
-        if (body?.error) message = body.error
-      } catch {}
-      return { email: null, error: { message } }
+    try {
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employee_id: employee.id, email }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { email: null, error: { message: data.error || 'فشل الإرسال' } }
+      return { email, error: null }
+    } catch (e) {
+      return { email: null, error: { message: e.message } }
     }
-    return { email, error: null }
   }
 
   const handleVerifyOtp = async () => {
