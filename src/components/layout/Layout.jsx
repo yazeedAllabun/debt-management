@@ -44,6 +44,9 @@ export function Layout() {
         <div className="p-4 md:p-6 print-full">
           <Outlet />
         </div>
+        <footer className="no-print text-center py-3 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800">
+          © {new Date().getFullYear()} جميع الحقوق محفوظة — راكان للتمويل
+        </footer>
       </main>
 
       {!isMuhtasibPage && (
