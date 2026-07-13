@@ -46,7 +46,7 @@ export function Layout() {
         </div>
       </main>
 
-      <footer className="no-print fixed bottom-0 left-0 right-0 z-20 text-center py-2 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+      <footer className="no-print fixed bottom-0 left-0 right-0 z-10 text-center py-2 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
         © {new Date().getFullYear()} جميع الحقوق محفوظة
       </footer>
 
