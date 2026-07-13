@@ -68,8 +68,7 @@ export function SettingsPage() {
   /* ── التحقق ثم الحفظ ── */
   const handleVerifyAndSave = async () => {
     if (otpCode.length < 6) return setOtpError('أدخل الرمز كاملاً')
-    const target = otpStep === 'email' ? emailInput.trim().toLowerCase() : currentEmail
-    const { error } = await supabase.auth.verifyOtp({ email: target, token: otpCode, type: 'email' })
+    const { error } = await supabase.auth.verifyOtp({ email: currentEmail, token: otpCode, type: 'email' })
     if (error) return setOtpError('الرمز غير صحيح أو انتهت صلاحيته')
 
     if (otpStep === 'password') {
@@ -114,15 +113,15 @@ export function SettingsPage() {
     const val = emailInput.trim().toLowerCase()
     if (!val.includes('@')) return setEmailError('البريد الإلكتروني غير صحيح')
 
-    if (val === currentEmail) {
-      // لم يتغير → احفظ مباشرة
+    if (!currentEmail || val === currentEmail) {
+      // لا يوجد إيميل حالي أو لم يتغير → احفظ مباشرة
       await saveOwnerEmail(val); setCurrentEmail(val)
       setEmailSaved(true); setTimeout(() => setEmailSaved(false), 3000)
       return
     }
-    // إرسال OTP للبريد الجديد لإثبات الملكية
+    // إرسال OTP للإيميل الحالي للتحقق من هوية المالك قبل التغيير
     setOtpSending(true)
-    const err = await sendVerifyOtp(val)
+    const err = await sendVerifyOtp(currentEmail)
     setOtpSending(false)
     if (err) return setEmailError('فشل إرسال رمز التحقق: ' + err)
     setOtpStep('email'); setOtpCode(''); setOtpError('')
@@ -130,12 +129,11 @@ export function SettingsPage() {
 
   /* ── حقل OTP المشترك ── */
   const OtpBlock = ({ accent = 'blue' }) => {
-    const target = otpStep === 'email' ? emailInput.trim().toLowerCase() : currentEmail
     return (
       <div className={`space-y-3 pt-3 border-t border-gray-100 dark:border-gray-700`}>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          تم إرسال رمز التحقق إلى{' '}
-          <span className="font-medium" dir="ltr">{maskEmail(target)}</span>
+          تم إرسال رمز التحقق إلى بريدك الحالي{' '}
+          <span className="font-medium" dir="ltr">{maskEmail(currentEmail)}</span>
         </div>
         {otpError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{otpError}</p>}
         <input
@@ -151,7 +149,7 @@ export function SettingsPage() {
           </button>
           <button onClick={async () => {
             setOtpSending(true)
-            await sendVerifyOtp(target)
+            await sendVerifyOtp(currentEmail)
             setOtpSending(false)
           }} disabled={otpSending}
             className="px-3 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
