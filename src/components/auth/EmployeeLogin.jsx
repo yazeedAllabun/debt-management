@@ -103,12 +103,12 @@ export function EmployeeLogin() {
   /* ── نسيت كلمة المرور ── */
   const handleForgotPassword = async () => {
     setSubmitting(true)
-    // إن كان للموظف إيميل → أرسل له، وإلا أرسل لبريد المالك
+    // إن كان للموظف إيميل → أرسل له، وإلا أرسل لبريد المدير
     const email     = emp?.email || await fetchOwnerEmail()
     const isOwner   = !emp?.email
     if (!email) {
       setSubmitting(false)
-      return setError('لا يوجد بريد مسجّل — تواصل مع المالك مباشرة')
+      return setError('لا يوجد بريد مسجّل — تواصل مع المدير مباشرة')
     }
     const err = await sendOtp(email)
     setSubmitting(false)
@@ -167,7 +167,7 @@ export function EmployeeLogin() {
               {loadingEmps ? (
                 <p className="text-center text-sm text-gray-400 py-4">جاري التحميل...</p>
               ) : employees.length === 0 ? (
-                <p className="text-center text-sm text-gray-400 py-4">لا يوجد موظفون مسجّلون، تواصل مع المالك.</p>
+                <p className="text-center text-sm text-gray-400 py-4">لا يوجد موظفون مسجّلون، تواصل مع المدير.</p>
               ) : (
                 <select value={selectedId} onChange={e => setSelectedId(e.target.value)} className={inputCls}>
                   <option value="">— اختر اسمك —</option>
@@ -309,10 +309,10 @@ export function EmployeeLogin() {
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">استعادة كلمة المرور</h2>
                 {otpIsOwner ? (
                   <>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز التحقق لبريد المالك</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">تم إرسال رمز التحقق لبريد المدير</p>
                     <p className="text-sm font-medium text-orange-500 dark:text-orange-400" dir="ltr">{maskEmail(otpEmail)}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 bg-orange-50 dark:bg-orange-900/20 rounded-lg px-3 py-2">
-                      تواصل مع المالك للحصول على الرمز
+                      تواصل مع المدير للحصول على الرمز
                     </p>
                   </>
                 ) : (

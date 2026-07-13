@@ -97,7 +97,7 @@ export function Sidebar({ open, onClose }) {
             }
           >
             <ShieldCheck size={19} />
-            <span>صفحة المالك</span>
+            <span>صفحة المدير</span>
           </NavLink>
         </div>
       )}

@@ -26,12 +26,12 @@ export function EmployeesPage() {
           <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/40 rounded-2xl flex items-center justify-center mx-auto">
             <Lock size={26} className="text-yellow-600 dark:text-yellow-400" />
           </div>
-          <p className="text-gray-600 dark:text-gray-400">هذه الصفحة خاصة بالمالك فقط</p>
+          <p className="text-gray-600 dark:text-gray-400">هذه الصفحة خاصة بالمدير فقط</p>
           <button
             onClick={() => navigate('/owner')}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
           >
-            الدخول لصفحة المالك
+            الدخول لصفحة المدير
           </button>
         </div>
       </div>
@@ -57,7 +57,7 @@ export function EmployeesPage() {
         <button
           onClick={() => navigate('/owner')}
           className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
-          title="رجوع لصفحة المالك"
+          title="رجوع لصفحة المدير"
         >
           <ArrowLeft size={18} />
         </button>
@@ -77,7 +77,7 @@ export function EmployeesPage() {
             onClick={() => navigate('/owner')}
             className="mt-4 text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
-            إضافة موظفين من صفحة المالك
+            إضافة موظفين من صفحة المدير
           </button>
         </div>
       ) : (

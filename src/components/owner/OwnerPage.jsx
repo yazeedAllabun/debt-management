@@ -205,13 +205,13 @@ export function OwnerPage() {
           <KeyRound size={26} className="text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد حساب المالك</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">إعداد حساب المدير</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">الخطوة 1 من 2</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
         <div className="space-y-3 text-right">
           <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
-            className={inputCls} placeholder="اسم المالك *" />
+            className={inputCls} placeholder="اسم المدير *" />
           <div className="relative">
             <input type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
               className={inputCls} placeholder="كلمة المرور" />
@@ -223,7 +223,7 @@ export function OwnerPage() {
             className={inputCls} placeholder="تأكيد كلمة المرور" />
         </div>
         <button onClick={async () => {
-          if (!nameInput.trim()) return setError('اسم المالك مطلوب')
+          if (!nameInput.trim()) return setError('اسم المدير مطلوب')
           if (pin.length < 4) return setError('4 أحرف على الأقل')
           if (pin !== confirmPin) return setError('كلمتا المرور غير متطابقتين')
           try {
@@ -307,7 +307,7 @@ export function OwnerPage() {
           <Lock size={26} className="text-yellow-600 dark:text-yellow-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">صفحة المالك</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">صفحة المدير</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">أدخل كلمة المرور للوصول</p>
         </div>
         {error && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>}
@@ -363,11 +363,11 @@ export function OwnerPage() {
         </button>
         <button onClick={async () => {
           const p = await fetchPin()
-          if (p) return setError('يوجد حساب مالك مسجّل — استخدم كلمة المرور أو "نسيت كلمة المرور"')
+          if (p) return setError('يوجد حساب مدير مسجّل — استخدم كلمة المرور أو "نسيت كلمة المرور"')
           setNameInput(''); setPin(''); setConfirm(''); setError('')
           setStep('setup')
         }} className="w-full py-1.5 text-sm text-green-600 dark:text-green-400 hover:underline">
-          تسجيل مالك جديد
+          تسجيل مدير جديد
         </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
           رجوع للرئيسية
@@ -534,7 +534,7 @@ export function OwnerPage() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              {ownerName ? `مرحباً، ${ownerName}` : 'صفحة المالك'}
+              {ownerName ? `مرحباً، ${ownerName}` : 'صفحة المدير'}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">الملخص المالي الكامل</p>
           </div>
@@ -671,7 +671,7 @@ export function OwnerPage() {
                       {!passOtpVerified ? (
                         passOtpSent && (
                           <div className="space-y-2">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">أدخل رمز OTP المُرسَل إلى بريد المالك</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">أدخل رمز OTP المُرسَل إلى بريد المدير</p>
                             <input
                               type="text"
                               inputMode="numeric"
