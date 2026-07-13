@@ -59,16 +59,17 @@ export function SettingsPage() {
   }, [isOwner])
 
   /* ── إرسال OTP ── */
-  const sendVerifyOtp = async () => {
-    if (!currentEmail) return false
-    const { error } = await supabase.auth.signInWithOtp({ email: currentEmail })
-    return !error
+  const sendVerifyOtp = async (email) => {
+    if (!email) return 'لا يوجد بريد إلكتروني'
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    return error ? (error.message || 'فشل الإرسال') : null
   }
 
   /* ── التحقق ثم الحفظ ── */
   const handleVerifyAndSave = async () => {
     if (otpCode.length < 6) return setOtpError('أدخل الرمز كاملاً')
-    const { error } = await supabase.auth.verifyOtp({ email: currentEmail, token: otpCode, type: 'email' })
+    const target = otpStep === 'email' ? emailInput.trim().toLowerCase() : currentEmail
+    const { error } = await supabase.auth.verifyOtp({ email: target, token: otpCode, type: 'email' })
     if (error) return setOtpError('الرمز غير صحيح أو انتهت صلاحيته')
 
     if (otpStep === 'password') {
@@ -95,72 +96,75 @@ export function SettingsPage() {
     if (newPass !== confPass)   return setPassError('كلمتا المرور غير متطابقتين')
 
     if (!currentEmail) {
-      // لا يوجد إيميل → احفظ مباشرة
       await savePin(newPass); setStoredPin(newPass)
       setOldPass(''); setNewPass(''); setConfPass('')
       setPassSaved(true); setTimeout(() => setPassSaved(false), 3000)
       return
     }
     setOtpSending(true)
-    const sent = await sendVerifyOtp()
+    const err = await sendVerifyOtp(currentEmail)
     setOtpSending(false)
-    if (!sent) return setPassError('فشل إرسال رمز التحقق')
+    if (err) return setPassError('فشل إرسال رمز التحقق: ' + err)
     setOtpStep('password'); setOtpCode(''); setOtpError('')
   }
 
   /* ── زر حفظ البريد ── */
   const handleSaveEmail = async () => {
     setEmailError('')
-    if (!emailInput.includes('@')) return setEmailError('البريد الإلكتروني غير صحيح')
+    const val = emailInput.trim().toLowerCase()
+    if (!val.includes('@')) return setEmailError('البريد الإلكتروني غير صحيح')
 
-    if (!currentEmail || emailInput.trim().toLowerCase() === currentEmail) {
-      // لا يوجد بريد حالي أو لم يتغير → احفظ مباشرة
-      const val = emailInput.trim().toLowerCase()
+    if (val === currentEmail) {
+      // لم يتغير → احفظ مباشرة
       await saveOwnerEmail(val); setCurrentEmail(val)
       setEmailSaved(true); setTimeout(() => setEmailSaved(false), 3000)
       return
     }
+    // إرسال OTP للبريد الجديد لإثبات الملكية
     setOtpSending(true)
-    const sent = await sendVerifyOtp()
+    const err = await sendVerifyOtp(val)
     setOtpSending(false)
-    if (!sent) return setEmailError('فشل إرسال رمز التحقق')
+    if (err) return setEmailError('فشل إرسال رمز التحقق: ' + err)
     setOtpStep('email'); setOtpCode(''); setOtpError('')
   }
 
   /* ── حقل OTP المشترك ── */
-  const OtpBlock = ({ accent = 'blue' }) => (
-    <div className={`space-y-3 pt-3 border-t border-gray-100 dark:border-gray-700`}>
-      <div className="text-sm text-gray-500 dark:text-gray-400">
-        تم إرسال رمز التحقق لبريدك{' '}
-        <span className="font-medium" dir="ltr">{maskEmail(currentEmail)}</span>
+  const OtpBlock = ({ accent = 'blue' }) => {
+    const target = otpStep === 'email' ? emailInput.trim().toLowerCase() : currentEmail
+    return (
+      <div className={`space-y-3 pt-3 border-t border-gray-100 dark:border-gray-700`}>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          تم إرسال رمز التحقق إلى{' '}
+          <span className="font-medium" dir="ltr">{maskEmail(target)}</span>
+        </div>
+        {otpError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{otpError}</p>}
+        <input
+          type="text" inputMode="numeric" maxLength={8} value={otpCode}
+          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+          className={`${inputCls} text-center text-xl font-bold tracking-[0.3em]`}
+          placeholder="000000" dir="ltr" autoFocus
+        />
+        <div className="flex gap-2">
+          <button onClick={handleVerifyAndSave}
+            className={`flex-1 py-3 bg-${accent}-600 hover:bg-${accent}-700 text-white font-medium rounded-xl transition-colors`}>
+            تحقق وحفظ
+          </button>
+          <button onClick={async () => {
+            setOtpSending(true)
+            await sendVerifyOtp(target)
+            setOtpSending(false)
+          }} disabled={otpSending}
+            className="px-3 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+            <RefreshCw size={15} className={otpSending ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={() => { setOtpStep(null); setOtpCode(''); setOtpError('') }}
+            className="px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700">
+            إلغاء
+          </button>
+        </div>
       </div>
-      {otpError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{otpError}</p>}
-      <input
-        type="text" inputMode="numeric" maxLength={8} value={otpCode}
-        onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-        className={`${inputCls} text-center text-xl font-bold tracking-[0.3em]`}
-        placeholder="000000" dir="ltr" autoFocus
-      />
-      <div className="flex gap-2">
-        <button onClick={handleVerifyAndSave}
-          className={`flex-1 py-3 bg-${accent}-600 hover:bg-${accent}-700 text-white font-medium rounded-xl transition-colors`}>
-          تحقق وحفظ
-        </button>
-        <button onClick={async () => {
-          setOtpSending(true)
-          await sendVerifyOtp()
-          setOtpSending(false)
-        }} disabled={otpSending}
-          className="px-3 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
-          <RefreshCw size={15} className={otpSending ? 'animate-spin' : ''} />
-        </button>
-        <button onClick={() => { setOtpStep(null); setOtpCode(''); setOtpError('') }}
-          className="px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700">
-          إلغاء
-        </button>
-      </div>
-    </div>
-  )
+    )
+  }
 
   if (!isOwner) {
     return (
