@@ -40,13 +40,13 @@ export function Layout() {
         />
       )}
 
-      <main className="md:mr-64 pt-16 min-h-screen">
+      <main className="md:mr-64 pt-16 pb-10 min-h-screen">
         <div className="p-4 md:p-6 print-full">
           <Outlet />
         </div>
       </main>
 
-      <footer className="no-print md:mr-64 text-center py-3 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+      <footer className="no-print fixed bottom-0 left-0 right-0 z-20 text-center py-2 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
         © {new Date().getFullYear()} جميع الحقوق محفوظة
       </footer>
 
