@@ -369,17 +369,6 @@ export function OwnerPage() {
         }} className="w-full py-1.5 text-sm text-green-600 dark:text-green-400 hover:underline">
           تسجيل مالك جديد
         </button>
-        <button onClick={async () => {
-          if (!window.confirm('سيتم حذف بيانات المالك نهائياً. هل أنت متأكد؟')) return
-          try {
-            await supabase.from('settings').delete().in('key', ['owner_pin', 'owner_session_token', 'owner_name', 'owner_email'])
-            ownerLogout()
-            setStoredPin(null); setOwnerName(''); setPin(''); setNameInput(''); setError('')
-            setStep('setup')
-          } catch (e) { setError('فشل الحذف: ' + (e.message || '')) }
-        }} className="w-full py-1.5 text-sm text-red-500 dark:text-red-400 hover:underline">
-          حذف المالك الحالي
-        </button>
         <button onClick={() => navigate('/')} className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline">
           رجوع للرئيسية
         </button>
@@ -558,17 +547,6 @@ export function OwnerPage() {
           <button onClick={() => { ownerLogout(); setStep('login'); setPin('') }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
             <LogOut size={14} /> خروج
-          </button>
-          <button onClick={async () => {
-            if (!window.confirm('هل أنت متأكد من حذف حساب المالك بالكامل؟ لا يمكن التراجع.')) return
-            await supabase.from('settings').delete().in('key', [
-              'owner_pin', 'owner_session_token', 'owner_name', 'owner_email',
-            ])
-            ownerLogout()
-            setStoredPin(null); setOwnerName(''); setPin(''); setNameInput('')
-            setStep('setup')
-          }} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 text-sm transition-colors">
-            <Trash2 size={14} /> حذف المالك
           </button>
         </div>
       </div>

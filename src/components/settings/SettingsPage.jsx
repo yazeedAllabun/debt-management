@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOwnerSession } from '../../context/OwnerSessionContext'
 import { supabase } from '../../lib/supabase'
-import { KeyRound, Mail, Trash2, Eye, EyeOff, Lock, Check, Settings, RefreshCw } from 'lucide-react'
+import { KeyRound, Mail, Eye, EyeOff, Lock, Check, Settings, RefreshCw } from 'lucide-react'
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm'
 
@@ -26,7 +26,7 @@ const maskEmail = (email) => {
 }
 
 export function SettingsPage() {
-  const { isOwner, ownerLogout } = useOwnerSession()
+  const { isOwner } = useOwnerSession()
   const [storedPin, setStoredPin]   = useState(null)
   const [currentEmail, setCurrentEmail] = useState('')
 
@@ -44,8 +44,6 @@ export function SettingsPage() {
   const [emailSaved, setEmailSaved] = useState(false)
 
   // Delete
-  const [deleteError, setDeleteError] = useState('')
-
   // OTP shared state — 'password' | 'email' | null
   const [otpStep,    setOtpStep]    = useState(null)
   const [otpCode,    setOtpCode]    = useState('')
@@ -259,29 +257,6 @@ export function SettingsPage() {
             <OtpBlock accent="purple" />
           </>
         )}
-      </div>
-
-      {/* Danger Zone */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-red-100 dark:border-red-800/30 p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-            <Trash2 size={18} className="text-red-500 dark:text-red-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-red-600 dark:text-red-400">حذف حساب المالك</h3>
-            <p className="text-xs text-gray-400">لا يمكن التراجع عن هذا الإجراء</p>
-          </div>
-        </div>
-        {deleteError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{deleteError}</p>}
-        <button onClick={async () => {
-          if (!window.confirm('سيتم حذف بيانات المالك نهائياً. هل أنت متأكد؟')) return
-          try {
-            await supabase.from('settings').delete().in('key', ['owner_pin', 'owner_session_token', 'owner_name', 'owner_email'])
-            ownerLogout()
-          } catch (e) { setDeleteError('فشل الحذف: ' + (e.message || '')) }
-        }} className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors">
-          حذف حساب المالك
-        </button>
       </div>
     </div>
   )
