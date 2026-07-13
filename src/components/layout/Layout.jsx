@@ -45,7 +45,7 @@ export function Layout() {
           <Outlet />
         </div>
         <footer className="no-print text-center py-3 text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800">
-          © {new Date().getFullYear()} جميع الحقوق محفوظة — راكان للتمويل
+          © {new Date().getFullYear()} جميع الحقوق محفوظة
         </footer>
       </main>
 
