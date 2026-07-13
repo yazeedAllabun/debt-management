@@ -9,7 +9,7 @@ export function Header({ onMenuClick, onTour }) {
   const { currentEmployee, employeeLogout } = useEmployeeSession()
 
   return (
-    <header className="no-print fixed top-0 right-0 left-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 shadow-sm relative">
+    <header className="no-print fixed top-0 right-0 left-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 shadow-sm">
 
       {/* Right side: Hamburger (mobile) + Logo + Company Name */}
       <div className="flex items-center gap-3">
