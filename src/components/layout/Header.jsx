@@ -2,7 +2,8 @@ import { Sun, Moon, Menu, LogOut, HelpCircle } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useEmployeeSession } from '../../context/EmployeeSessionContext'
 import { DateTimeDisplay } from './DateTimeDisplay'
-import logoImg from '../../assets/logo-dark.png'
+import logoDark from '../../assets/logo-dark.png'
+import logoLight from '../../assets/logo.jpg'
 
 export function Header({ onMenuClick, onTour }) {
   const { theme, toggleTheme } = useTheme()
@@ -22,7 +23,11 @@ export function Header({ onMenuClick, onTour }) {
         </button>
 
         <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden shrink-0">
-          <img src={logoImg} alt="شعار مكتب راكان" className="w-full h-full object-contain" />
+          <img
+            src={theme === 'dark' ? logoDark : logoLight}
+            alt="شعار راكان للتمويل"
+            className="w-full h-full object-contain"
+          />
         </div>
 
         <div>
